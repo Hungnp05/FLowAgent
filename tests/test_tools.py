@@ -19,6 +19,7 @@ from flowagent.db.session import session_scope
 from flowagent.errors import (
     InvalidDateError,
     InvalidScheduleError,
+    NoChangesError,
     PriorityModelUnavailableError,
 )
 from flowagent.ml.labels import PriorityPrediction
@@ -167,3 +168,10 @@ def test_list_tasks_keyword_search_includes_done_tasks(tool_config: dict) -> Non
     update_task.invoke({"task_id": 1, "status": "done"}, tool_config)
     assert "Viết blog" in list_tasks.invoke({"keyword": "viet blog"}, tool_config)
     assert "Viết blog" not in list_tasks.invoke({}, tool_config)
+
+
+def test_update_task_without_changes_raises(tool_config: dict) -> None:
+    """An update that changes nothing is rejected instead of silently succeeding."""
+    create_task.invoke({"title": "Nộp học phí"}, tool_config)
+    with pytest.raises(NoChangesError):
+        update_task.invoke({"task_id": 1, "priority": None}, tool_config)

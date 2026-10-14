@@ -20,7 +20,12 @@ from flowagent.db import crud
 from flowagent.db.models import Priority, TaskStatus
 from flowagent.db.schemas import TaskCreate, TaskFilter, TaskUpdate
 from flowagent.db.session import session_scope
-from flowagent.errors import FlowAgentError, InvalidDateError, PriorityModelUnavailableError
+from flowagent.errors import (
+    FlowAgentError,
+    InvalidDateError,
+    NoChangesError,
+    PriorityModelUnavailableError,
+)
 from flowagent.ml.labels import PriorityPrediction
 from flowagent.planning.scheduler import (
     DEFAULT_DAILY_WORK_MINUTES,
@@ -179,9 +184,12 @@ def update_task(
         "deadline": parse_optional_datetime(deadline),
         "estimated_minutes": estimated_minutes,
     }
-    changes = TaskUpdate(
-        **{field: value for field, value in provided_changes.items() if value is not None}
-    )
+    given_changes = {field: value for field, value in provided_changes.items() if value is not None}
+    if not given_changes:
+        raise NoChangesError(
+            "Không có trường nào để cập nhật; chỉ gọi update_task khi cần đổi giá trị."
+        )
+    changes = TaskUpdate(**given_changes)
     with session_scope(deps.engine) as session:
         return f"Đã cập nhật: {format_task(crud.update_task(session, task_id, changes))}"
 

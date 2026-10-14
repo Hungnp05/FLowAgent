@@ -40,3 +40,7 @@ class ModelArtifactError(FlowAgentError):
 
 class PriorityModelUnavailableError(FlowAgentError):
     pass
+
+
+class NoChangesError(FlowAgentError, ValueError):
+    pass

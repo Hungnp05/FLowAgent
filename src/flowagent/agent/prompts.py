@@ -1,16 +1,24 @@
-from datetime import datetime
+import calendar
+from datetime import date, datetime, timedelta
 
 VIETNAMESE_WEEKDAYS = ("Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật")
+SPOKEN_WEEKDAYS = ("thứ 2", "thứ 3", "thứ 4", "thứ 5", "thứ 6", "thứ 7", "chủ nhật")
+RELATIVE_DAY_NAMES = {0: "hôm nay", 1: "ngày mai", 2: "ngày kia"}
+WEEK_NAMES = {0: "tuần này", 1: "tuần sau"}
+CALENDAR_DAYS = 14
 
 SYSTEM_PROMPT_TEMPLATE = """Bạn là FlowAgent, trợ lý AI giúp người dùng quản lý công việc và lập kế hoạch.
 
-Thời điểm hiện tại: {weekday}, {now:%Y-%m-%d %H:%M} (giờ Việt Nam).
+Thời điểm hiện tại: {weekday}, {now:%Y-%m-%d %H:%M} (giờ Việt Nam). Tuần bắt đầu từ thứ 2.
+
+Bảng lịch (LUÔN tra bảng này để đổi ngày tương đối, không tự tính):
+{calendar}
 
 Quy tắc:
 - Luôn dùng công cụ để đọc hoặc thay đổi dữ liệu; không bao giờ bịa ra công việc, id hay kết quả.
 - Đổi mọi mốc thời gian tương đối ("mai", "thứ 6 tuần sau", "cuối tháng") sang dạng YYYY-MM-DD HH:MM
-  dựa trên thời điểm hiện tại. Nếu chỉ nói ngày mà không nói giờ: hạn chót (deadline) dùng 23:59,
-  ngày bắt đầu (planned_start) dùng 09:00.
+  bằng bảng lịch ở trên. "Thứ X" không kèm "tuần sau" nghĩa là thứ X gần nhất sắp tới.
+  Nếu chỉ nói ngày mà không nói giờ: hạn chót (deadline) dùng 23:59, ngày bắt đầu (planned_start) dùng 09:00.
 - "bắt đầu từ ...", "làm từ ..." là planned_start; "hạn", "trước ...", "nộp ..." là deadline.
 - "từ A đến B": planned_start = A và deadline = B. "Nhắc tôi ... lúc X" hoặc một mốc giờ duy nhất
   ("họp lúc 3 giờ chiều mai"): đặt deadline = X.
@@ -20,8 +28,8 @@ Quy tắc:
   hãy tìm bằng list_tasks trước; nếu đã có thì dùng update_task thay vì tạo trùng.
 - "Ước tính/mất khoảng N tiếng" cho một việc có sẵn là cập nhật estimated_minutes bằng update_task.
 - Độ ưu tiên: "gấp"/"khẩn cấp" -> urgent, "quan trọng"/"cao" -> high, "thấp" -> low, "bình thường" -> medium.
-  Nếu người dùng KHÔNG nói độ ưu tiên, bỏ trống priority khi gọi create_task: mô hình học máy sẽ tự gợi ý,
-  và hãy nhắc người dùng rằng độ ưu tiên là gợi ý, có thể đổi.
+  Nếu người dùng KHÔNG nói độ ưu tiên, chỉ cần không truyền priority trong create_task (hệ thống tự gợi ý);
+  KHÔNG gọi thêm update_task cho việc vừa tạo. Nhắc người dùng rằng độ ưu tiên là gợi ý, có thể đổi.
 - Khi người dùng hỏi một việc nên ưu tiên mức nào, dùng predict_priority.
 - Chỉ dùng create_project_plan khi người dùng yêu cầu lập kế hoạch / chia nhỏ một mục tiêu lớn; một việc
   đơn lẻ có hạn (kể cả việc lớn như "viết luận văn") thì dùng create_task.
@@ -30,6 +38,31 @@ Quy tắc:
 - Trả lời bằng tiếng Việt, ngắn gọn, thân thiện; liệt kê công việc dạng gạch đầu dòng."""
 
 
+def describe_relative_day(day: date, today: date) -> str:
+    """Name a day the way users say it, e.g. 'ngày mai, thứ 6 tuần này' or 'thứ 2 tuần sau'."""
+    weeks_ahead = (
+        day - timedelta(days=day.weekday()) - (today - timedelta(days=today.weekday()))
+    ).days // 7
+    names = (
+        [RELATIVE_DAY_NAMES[(day - today).days]] if (day - today).days in RELATIVE_DAY_NAMES else []
+    )
+    names.append(f"{SPOKEN_WEEKDAYS[day.weekday()]} {WEEK_NAMES.get(weeks_ahead, '')}".strip())
+    return ", ".join(names)
+
+
+def build_calendar(today: date, day_count: int = CALENDAR_DAYS) -> str:
+    """List the coming days with their ISO dates and spoken names, plus the end of the month."""
+    lines = [
+        f"- {day:%Y-%m-%d} ({VIETNAMESE_WEEKDAYS[day.weekday()]}): {describe_relative_day(day, today)}"
+        for day in (today + timedelta(days=offset) for offset in range(day_count))
+    ]
+    last_day = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+    lines.append(f"- Cuối tháng này: {last_day:%Y-%m-%d}")
+    return "\n".join(lines)
+
+
 def build_system_prompt(now: datetime) -> str:
-    """Fill the system prompt with the current local date, time and weekday."""
-    return SYSTEM_PROMPT_TEMPLATE.format(weekday=VIETNAMESE_WEEKDAYS[now.weekday()], now=now)
+    """Fill the system prompt with the current time and a calendar of the coming two weeks."""
+    return SYSTEM_PROMPT_TEMPLATE.format(
+        weekday=VIETNAMESE_WEEKDAYS[now.weekday()], now=now, calendar=build_calendar(now.date())
+    )
