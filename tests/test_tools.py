@@ -3,17 +3,22 @@ from datetime import datetime
 import pytest
 
 from flowagent.agent.tools import (
+    DEPS_CONFIG_KEY,
+    ToolDeps,
     create_project_plan,
     create_task,
     list_tasks,
     parse_local_datetime,
     plan_my_day,
+    predict_priority,
     update_task,
 )
 from flowagent.db import crud
 from flowagent.db.models import Priority, TaskStatus
 from flowagent.db.session import session_scope
-from flowagent.errors import InvalidDateError, InvalidScheduleError
+from flowagent.errors import InvalidDateError, InvalidScheduleError, PriorityModelUnavailableError
+from flowagent.ml.labels import PriorityPrediction
+from tests.conftest import fixed_clock
 
 
 def test_parse_date_only_means_end_of_day() -> None:
@@ -100,3 +105,53 @@ def test_create_task_tool_reports_start_after_deadline(tool_config: dict) -> Non
         create_task.invoke(
             {"title": "Sai", "planned_start": "2026-10-22", "deadline": "2026-10-20"}, tool_config
         )
+
+
+def config_with_predictor(engine, prediction: PriorityPrediction) -> dict:
+    """Build a tool config whose priority model always returns the given prediction."""
+    deps = ToolDeps(engine=engine, clock=fixed_clock, predict_priority=lambda text: prediction)
+    return {"configurable": {DEPS_CONFIG_KEY: deps}}
+
+
+def test_create_task_uses_model_when_priority_missing(engine) -> None:
+    """Without an explicit priority the model's suggestion is stored and mentioned."""
+    config = config_with_predictor(engine, PriorityPrediction(Priority.URGENT, 0.81))
+    result = create_task.invoke({"title": "Server sập"}, config)
+    assert "81%" in result
+    with session_scope(engine) as session:
+        assert crud.list_tasks(session)[0].priority == Priority.URGENT
+
+
+def test_create_task_keeps_explicit_priority(engine) -> None:
+    """An explicit priority from the user always wins over the model."""
+    config = config_with_predictor(engine, PriorityPrediction(Priority.URGENT, 0.81))
+    create_task.invoke({"title": "Đọc sách", "priority": "low"}, config)
+    with session_scope(engine) as session:
+        assert crud.list_tasks(session)[0].priority == Priority.LOW
+
+
+def test_create_task_falls_back_to_medium_when_model_fails(engine) -> None:
+    """A crashing model must not block task creation."""
+
+    def broken_predictor(text: str) -> PriorityPrediction:
+        """Simulate a model failure."""
+        raise RuntimeError("model file corrupted")
+
+    deps = ToolDeps(engine=engine, clock=fixed_clock, predict_priority=broken_predictor)
+    create_task.invoke({"title": "Đi chợ"}, {"configurable": {DEPS_CONFIG_KEY: deps}})
+    with session_scope(engine) as session:
+        assert crud.list_tasks(session)[0].priority == Priority.MEDIUM
+
+
+def test_predict_priority_tool_reports_confidence(engine) -> None:
+    """The predict_priority tool returns the level and confidence."""
+    config = config_with_predictor(engine, PriorityPrediction(Priority.HIGH, 0.6))
+    assert predict_priority.invoke({"text": "Sửa lỗi thanh toán"}, config) == (
+        "Gợi ý: high (độ tin cậy 60%)"
+    )
+
+
+def test_predict_priority_tool_without_model_raises(tool_config: dict) -> None:
+    """Without a trained model the tool raises a domain error the agent can explain."""
+    with pytest.raises(PriorityModelUnavailableError):
+        predict_priority.invoke({"text": "x"}, tool_config)
