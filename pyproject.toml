@@ -21,13 +21,17 @@ dependencies = [
     "scikit-learn>=1.9",
     "joblib>=1.4",
     "cryptography>=44",
+    "fastembed>=0.9",
 ]
 
 [project.scripts]
 flowagent-reset-pin = "flowagent.security.reset_pin:main"
+flowagent-collect-jira = "flowagent.ml.jira_collection:main"
+flowagent-train-priority = "flowagent.ml.train_priority_model:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=9.1", "ruff>=0.17"]
+notebook = ["matplotlib>=3.9", "seaborn>=0.13", "nbformat>=5.10", "nbconvert>=7.16", "ipykernel>=6.29"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -44,3 +48,4 @@ select = ["E", "F", "I", "B", "UP", "SIM", "N", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/flowagent/agent/prompts.py" = ["E501"]
+"*.ipynb" = ["E402", "E501"]

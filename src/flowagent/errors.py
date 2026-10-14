@@ -32,3 +32,11 @@ class InvalidPinError(FlowAgentError, ValueError):
 
 class SecretDecryptionError(FlowAgentError):
     pass
+
+
+class ModelArtifactError(FlowAgentError):
+    pass
+
+
+class PriorityModelUnavailableError(FlowAgentError):
+    pass

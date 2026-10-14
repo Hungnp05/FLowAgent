@@ -11,10 +11,11 @@ Trợ lý AI quản lý công việc bằng tiếng Việt: thêm, sửa, tìm v
 - Bảng Kanban và cảnh báo việc quá hạn, sắp đến hạn.
 - Tự động đổi model khi model chính lỗi (Gemini → Gemini dự phòng → Groq).
 - Trang Cài đặt API bảo vệ bằng mã PIN; API key được mã hoá trước khi lưu.
+- Mô hình học máy gợi ý độ ưu tiên khi người dùng không nói rõ, huấn luyện trên 36.000 issue thật của Apache.
 
 ## Công nghệ
 
-Python 3.12 · LangChain/LangGraph (tool-calling agent) · Gemini / Groq · SQLModel (SQLite) · Streamlit · Plotly · cryptography · pytest · ruff · GitHub Actions
+Python 3.12 · LangChain/LangGraph (tool-calling agent) · Gemini / Groq · scikit-learn · fastembed (multilingual embeddings) · SQLModel (SQLite) · Streamlit · Plotly · cryptography · pytest · ruff · GitHub Actions
 
 ## Kiến trúc
 
@@ -83,6 +84,27 @@ Ra lệnh bằng tiếng Việt tự nhiên:
 
 - Chọn **Tất cả công việc** hoặc một dự án.
 - Chỉ việc có **ngày bắt đầu** mới hiện trên biểu đồ. Việc tạo bằng lệnh lập kế hoạch dự án luôn có sẵn ngày bắt đầu.
+
+## Mô hình học máy: dự đoán độ ưu tiên
+
+- **Dữ liệu:** 36.000 issue đã xử lý của 12 dự án Apache (Kafka, Spark, Hadoop…), thu thập qua REST API công khai của Apache Jira. Độ ưu tiên gốc được quy về 4 mức `low`, `medium`, `high`, `urgent`. Dữ liệu mất cân bằng mạnh: `medium` chiếm 74,5%.
+- **Mô hình:** so sánh baseline, TF-IDF + Logistic Regression, và embedding đa ngôn ngữ (`paraphrase-multilingual-MiniLM-L12-v2`) + Logistic Regression. Chi tiết trong [notebooks/priority_model.ipynb](notebooks/priority_model.ipynb).
+
+| Mô hình | Macro-F1 (Apache, tiếng Anh) | Macro-F1 (64 việc tiếng Việt) |
+|---|---|---|
+| Baseline (lớp đông nhất) | 0,21 | – |
+| TF-IDF + LR | **0,41** | 0,20 |
+| Embedding đa ngôn ngữ + LR (dùng trong app) | 0,31 | **0,29** |
+
+App dùng mô hình embedding vì đây là mô hình duy nhất áp dụng được cho tiếng Việt. Mô hình chuyển giao khá tốt với công việc phần mềm, nhưng yếu với công việc cá nhân, nên app chỉ dùng kết quả như **gợi ý kèm độ tin cậy**. Biểu đồ nằm trong [docs/figures/](docs/figures/).
+
+Tái tạo kết quả:
+
+```bash
+pip install -e ".[dev,notebook]"
+flowagent-collect-jira        # tải dữ liệu (~1 phút)
+flowagent-train-priority      # huấn luyện và lưu models/priority_classifier.joblib
+```
 
 ## Xử lý sự cố
 

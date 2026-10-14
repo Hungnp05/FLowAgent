@@ -22,7 +22,13 @@ from langgraph.types import Command
 from sqlalchemy import Engine
 
 from flowagent.agent.prompts import build_system_prompt
-from flowagent.agent.tools import ALL_TOOLS, DEPS_CONFIG_KEY, ToolDeps, format_tool_error
+from flowagent.agent.tools import (
+    ALL_TOOLS,
+    DEPS_CONFIG_KEY,
+    PriorityPredictorFn,
+    ToolDeps,
+    format_tool_error,
+)
 from flowagent.clock import now_local
 
 CONFIRMATION_REQUIRED_MESSAGE = "Bạn có chắc muốn thực hiện thao tác này không?"
@@ -100,9 +106,10 @@ class FlowAgent:
         clock: Callable[[], datetime] = now_local,
         checkpointer: BaseCheckpointSaver | None = None,
         fallback_models: Sequence[BaseChatModel] = (),
+        predict_priority: PriorityPredictorFn | None = None,
     ) -> None:
-        """Wire the agent to a database, a clock, a conversation store and backup models."""
-        self._deps = ToolDeps(engine=engine, clock=clock)
+        """Wire the agent to a database, clock, conversation store, backup models and ML model."""
+        self._deps = ToolDeps(engine=engine, clock=clock, predict_priority=predict_priority)
         self._graph = build_agent_graph(
             chat_model, fallback_models, clock, checkpointer or InMemorySaver()
         )

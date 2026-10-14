@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, datetime, time
@@ -19,13 +20,16 @@ from flowagent.db import crud
 from flowagent.db.models import Priority, TaskStatus
 from flowagent.db.schemas import TaskCreate, TaskFilter, TaskUpdate
 from flowagent.db.session import session_scope
-from flowagent.errors import FlowAgentError, InvalidDateError
+from flowagent.errors import FlowAgentError, InvalidDateError, PriorityModelUnavailableError
+from flowagent.ml.labels import PriorityPrediction
 from flowagent.planning.scheduler import (
     DEFAULT_DAILY_WORK_MINUTES,
     WORKDAY_START,
     build_timeline,
     rank_tasks_for_today,
 )
+
+logger = logging.getLogger(__name__)
 
 DEPS_CONFIG_KEY = "flowagent_deps"
 DATE_ONLY_LENGTH = len("YYYY-MM-DD")
@@ -34,10 +38,14 @@ MAX_STEP_MINUTES = 2400
 DELETE_CANCELLED_MESSAGE = "Người dùng đã huỷ thao tác xoá."
 
 
+PriorityPredictorFn = Callable[[str], PriorityPrediction]
+
+
 @dataclass(frozen=True)
 class ToolDeps:
     engine: Engine
     clock: Callable[[], datetime]
+    predict_priority: PriorityPredictorFn | None = None
 
 
 class PlanStep(BaseModel):
@@ -71,6 +79,21 @@ def parse_optional_datetime(
     return parse_local_datetime(value, date_only_time) if value and value.strip() else None
 
 
+def suggest_priority(deps: ToolDeps, title: str, description: str) -> tuple[Priority, str]:
+    """Ask the ML model for a priority, falling back to medium when it is unavailable or fails."""
+    if deps.predict_priority is None:
+        return Priority.MEDIUM, ""
+    try:
+        prediction = deps.predict_priority(f"{title}. {description}".strip(". "))
+    except Exception:
+        logger.exception("Priority model failed; using medium")
+        return Priority.MEDIUM, ""
+    return (
+        prediction.priority,
+        f" (độ ưu tiên do mô hình gợi ý, tin cậy {prediction.confidence:.0%})",
+    )
+
+
 def format_tool_error(error: Exception, request: ToolCallRequest) -> str | None:
     """Return domain errors to the model as readable messages and let other errors propagate."""
     if isinstance(error, FlowAgentError):
@@ -83,14 +106,17 @@ def create_task(
     title: str,
     config: RunnableConfig,
     description: str = "",
-    priority: Priority = Priority.MEDIUM,
+    priority: Priority | None = None,
     planned_start: str | None = None,
     deadline: str | None = None,
     estimated_minutes: int | None = None,
     project_name: str | None = None,
 ) -> str:
-    """Tạo công việc mới; planned_start và deadline dạng 'YYYY-MM-DD HH:MM'."""
+    """Tạo công việc mới; bỏ trống priority nếu người dùng không nói để mô hình tự gợi ý."""
     deps = get_deps(config)
+    suggestion_note = ""
+    if priority is None:
+        priority, suggestion_note = suggest_priority(deps, title, description)
     with session_scope(deps.engine) as session:
         project_id = crud.get_project_by_name(session, project_name).id if project_name else None
         task = crud.create_task(
@@ -105,7 +131,7 @@ def create_task(
                 project_id=project_id,
             ),
         )
-        return f"Đã tạo: {format_task(task)}"
+        return f"Đã tạo: {format_task(task)}{suggestion_note}"
 
 
 @tool
@@ -211,6 +237,16 @@ def create_project_plan(
 
 
 @tool
+def predict_priority(text: str, config: RunnableConfig) -> str:
+    """Dùng mô hình học máy gợi ý độ ưu tiên cho một mô tả công việc, kèm độ tin cậy."""
+    deps = get_deps(config)
+    if deps.predict_priority is None:
+        raise PriorityModelUnavailableError("Mô hình dự đoán độ ưu tiên chưa được cài đặt.")
+    prediction = deps.predict_priority(text)
+    return f"Gợi ý: {prediction.priority.value} (độ tin cậy {prediction.confidence:.0%})"
+
+
+@tool
 def list_projects(config: RunnableConfig) -> str:
     """Liệt kê tất cả dự án hiện có."""
     deps = get_deps(config)
@@ -225,5 +261,6 @@ ALL_TOOLS: list[BaseTool] = [
     delete_task,
     plan_my_day,
     create_project_plan,
+    predict_priority,
     list_projects,
 ]

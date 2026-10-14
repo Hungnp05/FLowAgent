@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import streamlit as st
@@ -7,12 +8,16 @@ from sqlalchemy import Engine
 from flowagent.agent.factory import create_flow_agent
 from flowagent.agent.llm_config import LlmConfig, load_llm_config
 from flowagent.agent.service import FlowAgent
+from flowagent.agent.tools import PriorityPredictorFn
 from flowagent.config import get_settings
 from flowagent.db import crud
 from flowagent.db.models import Priority, Task, TaskStatus
 from flowagent.db.schemas import TaskFilter, TaskUpdate
 from flowagent.db.session import create_db_engine, session_scope
+from flowagent.ml.predictor import load_priority_predictor
 from flowagent.security.secret_box import SecretBox, load_or_create_secret_box
+
+logger = logging.getLogger(__name__)
 
 STATUS_LABELS = {
     TaskStatus.TODO: "Cần làm",
@@ -52,10 +57,22 @@ def load_current_llm_config() -> LlmConfig:
         return load_llm_config(session, get_settings(), get_secret_box())
 
 
+@st.cache_resource
+def get_priority_predictor() -> PriorityPredictorFn | None:
+    """Load the trained priority model once, or return None when it has not been trained."""
+    artifact_path = Path(get_settings().priority_model_path)
+    if not artifact_path.exists():
+        logger.warning("Priority model not found at %s; using medium by default", artifact_path)
+        return None
+    return load_priority_predictor(artifact_path).predict
+
+
 @st.cache_resource(max_entries=1)
 def build_agent_for_config(config_fingerprint: int, _config: LlmConfig) -> FlowAgent:
     """Build the agent once per distinct configuration; the fingerprint is the cache key."""
-    return create_flow_agent(_config, get_settings(), get_engine(), get_checkpointer())
+    return create_flow_agent(
+        _config, get_settings(), get_engine(), get_checkpointer(), get_priority_predictor()
+    )
 
 
 def get_agent() -> FlowAgent:
