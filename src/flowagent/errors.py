@@ -1,0 +1,34 @@
+class FlowAgentError(Exception):
+    pass
+
+
+class TaskNotFoundError(FlowAgentError, LookupError):
+    pass
+
+
+class ProjectNotFoundError(FlowAgentError, LookupError):
+    pass
+
+
+class ProjectExistsError(FlowAgentError, ValueError):
+    pass
+
+
+class InvalidScheduleError(FlowAgentError, ValueError):
+    pass
+
+
+class InvalidDateError(FlowAgentError, ValueError):
+    pass
+
+
+class MissingApiKeyError(FlowAgentError):
+    pass
+
+
+class InvalidPinError(FlowAgentError, ValueError):
+    pass
+
+
+class SecretDecryptionError(FlowAgentError):
+    pass
