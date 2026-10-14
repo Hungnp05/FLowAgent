@@ -141,16 +141,16 @@ def list_tasks(
     priority: Priority | None = None,
     due_before: str | None = None,
     keyword: str | None = None,
-    include_done: bool = False,
+    include_done: bool | None = None,
 ) -> str:
-    """Tìm công việc theo trạng thái, độ ưu tiên, hạn chót trước thời điểm, hoặc từ khoá."""
+    """Tìm việc theo trạng thái, ưu tiên, hạn hoặc từ khoá (bỏ qua dấu, gồm cả việc đã xong)."""
     deps = get_deps(config)
     task_filter = TaskFilter(
         status=status,
         priority=priority,
         due_before=parse_optional_datetime(due_before),
         keyword=keyword,
-        include_done=include_done,
+        include_done=bool(keyword) if include_done is None else include_done,
     )
     with session_scope(deps.engine) as session:
         return format_tasks(crud.list_tasks(session, task_filter))
@@ -168,7 +168,7 @@ def update_task(
     deadline: str | None = None,
     estimated_minutes: int | None = None,
 ) -> str:
-    """Cập nhật công việc theo id; chỉ truyền các trường cần thay đổi."""
+    """Sửa việc có sẵn theo id: hạn, bắt đầu, thời lượng, ưu tiên, trạng thái, tên."""
     deps = get_deps(config)
     provided_changes = {
         "title": title,
@@ -214,7 +214,7 @@ def plan_my_day(config: RunnableConfig, available_minutes: int = DEFAULT_DAILY_W
 def create_project_plan(
     project_name: str, goal: str, steps: list[PlanStep], config: RunnableConfig
 ) -> str:
-    """Chia nhỏ một mục tiêu lớn thành dự án gồm 3-10 bước tuần tự và tự xếp lịch cho từng bước."""
+    """Chỉ khi người dùng nhờ lập kế hoạch/chia nhỏ mục tiêu lớn: tạo dự án 3-10 bước."""
     deps = get_deps(config)
     slots = build_timeline([step.estimated_minutes for step in steps], deps.clock())
     with session_scope(deps.engine) as session:
@@ -238,7 +238,7 @@ def create_project_plan(
 
 @tool
 def predict_priority(text: str, config: RunnableConfig) -> str:
-    """Dùng mô hình học máy gợi ý độ ưu tiên cho một mô tả công việc, kèm độ tin cậy."""
+    """Chỉ khi người dùng hỏi một việc nên ưu tiên mức nào: gợi ý từ mô hình học máy."""
     deps = get_deps(config)
     if deps.predict_priority is None:
         raise PriorityModelUnavailableError("Mô hình dự đoán độ ưu tiên chưa được cài đặt.")

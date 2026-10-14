@@ -82,3 +82,11 @@ def test_update_task_rejects_deadline_before_existing_start(session: Session) ->
     )
     with pytest.raises(InvalidScheduleError):
         crud.update_task(session, task.id, TaskUpdate(deadline=datetime(2026, 10, 19, 9, 0)))
+
+
+def test_keyword_search_ignores_accents_and_word_order(session: Session) -> None:
+    """Typing without diacritics still finds the task, as long as every word appears."""
+    crud.create_task(session, TaskCreate(title="Ôn thi giải tích"))
+    crud.create_task(session, TaskCreate(title="Ôn thi vật lý"))
+    found = crud.list_tasks(session, TaskFilter(keyword="giai tich on thi"))
+    assert [task.title for task in found] == ["Ôn thi giải tích"]

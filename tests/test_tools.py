@@ -159,3 +159,11 @@ def test_predict_priority_tool_without_model_raises(tool_config: dict) -> None:
     """Without a trained model the tool raises a domain error the agent can explain."""
     with pytest.raises(PriorityModelUnavailableError):
         predict_priority.invoke({"text": "x"}, tool_config)
+
+
+def test_list_tasks_keyword_search_includes_done_tasks(tool_config: dict) -> None:
+    """Searching by keyword finds finished tasks so they can be reopened."""
+    create_task.invoke({"title": "Viết blog cá nhân"}, tool_config)
+    update_task.invoke({"task_id": 1, "status": "done"}, tool_config)
+    assert "Viết blog" in list_tasks.invoke({"keyword": "viet blog"}, tool_config)
+    assert "Viết blog" not in list_tasks.invoke({}, tool_config)

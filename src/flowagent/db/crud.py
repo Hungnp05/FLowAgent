@@ -11,6 +11,7 @@ from flowagent.errors import (
     ProjectNotFoundError,
     TaskNotFoundError,
 )
+from flowagent.vietnamese import contains_all_words
 
 
 def ensure_start_before_deadline(task: Task) -> None:
@@ -51,11 +52,15 @@ def list_tasks(session: Session, task_filter: TaskFilter | None = None) -> Seque
         query = query.where(Task.project_id == task_filter.project_id)
     if task_filter.due_before is not None:
         query = query.where(col(Task.deadline) <= task_filter.due_before)
-    if task_filter.keyword:
-        pattern = f"%{task_filter.keyword}%"
-        query = query.where(col(Task.title).ilike(pattern) | col(Task.description).ilike(pattern))
     query = query.order_by(col(Task.deadline).is_(None), col(Task.deadline), col(Task.id))
-    return session.exec(query).all()
+    tasks = session.exec(query).all()
+    if not task_filter.keyword:
+        return tasks
+    return [
+        task
+        for task in tasks
+        if contains_all_words(f"{task.title} {task.description}", task_filter.keyword)
+    ]
 
 
 def update_task(session: Session, task_id: int, changes: TaskUpdate) -> Task:
