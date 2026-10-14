@@ -7,8 +7,15 @@ from flowagent.db.models import Priority
 from flowagent.ml.jira_collection import build_search_url, parse_issue
 from flowagent.ml.labels import map_jira_priority
 from flowagent.ml.predictor import PriorityPredictor
+from flowagent.ml.synthetic_tasks import (
+    build_generation_prompt,
+    find_eval_leakage,
+    find_near_duplicates,
+    has_valid_length,
+    normalize_task_text,
+)
 from flowagent.ml.text_cleaning import build_issue_text, strip_jira_markup
-from flowagent.ml.training import prepare_dataset, score_predictions
+from flowagent.ml.training import prepare_dataset, score_predictions, source_balanced_weights
 
 
 @pytest.mark.parametrize(
@@ -107,3 +114,36 @@ def test_build_search_url_encodes_jql() -> None:
     url = build_search_url("KAFKA", 1000, 500)
     assert "project+%3D+KAFKA" in url
     assert "startAt=1000" in url and "maxResults=500" in url
+
+
+def test_source_balanced_weights_give_each_source_equal_total() -> None:
+    """A small source gets proportionally larger weights so both sources sum to the same total."""
+    weights = source_balanced_weights(["apache"] * 8 + ["synthetic"] * 2)
+    assert weights[:8].sum() == pytest.approx(weights[8:].sum())
+    assert weights.sum() == pytest.approx(10)
+
+
+def test_find_near_duplicates_keeps_first_occurrence() -> None:
+    """Only later rows nearly identical to an earlier kept row are flagged."""
+    embeddings = np.array([[1.0, 0.0], [0.99, 0.01], [0.0, 1.0]])
+    assert find_near_duplicates(embeddings, threshold=0.95) == [False, True, False]
+
+
+def test_find_eval_leakage_flags_rows_close_to_eval_set() -> None:
+    """Candidates too similar to an evaluation sentence are flagged as leakage."""
+    candidates = np.array([[1.0, 0.0], [0.0, 1.0]])
+    evaluation = np.array([[0.98, 0.02]])
+    assert find_eval_leakage(candidates, evaluation, threshold=0.9) == [True, False]
+
+
+def test_normalize_and_length_filters() -> None:
+    """Whitespace and trailing punctuation are normalised and too-short tasks rejected."""
+    assert normalize_task_text("  Đi   chợ mua rau.  ") == "Đi chợ mua rau"
+    assert not has_valid_length("Đi chợ")
+    assert has_valid_length("Đi chợ mua rau cho cả tuần")
+
+
+def test_build_generation_prompt_contains_definition_and_theme() -> None:
+    """The prompt carries the label definition and theme, and forbids leaking the label word."""
+    prompt = build_generation_prompt("personal", "urgent", "sức khoẻ", 10)
+    assert "sức khoẻ" in prompt and "vài giờ" in prompt and '"khẩn cấp"' in prompt

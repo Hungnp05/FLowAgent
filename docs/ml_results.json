@@ -85,5 +85,26 @@
       "Accuracy": 0.438,
       "Macro-F1": 0.397
     }
-  ]
+  ],
+  "domain_adaptation_macro_f1": {
+    "Chỉ Apache": {
+      "Apache (tiếng Anh)": 0.306,
+      "Việt – tất cả": 0.293,
+      "Việt – personal": 0.188,
+      "Việt – software": 0.397
+    },
+    "Chỉ dữ liệu tổng hợp": {
+      "Apache (tiếng Anh)": 0.181,
+      "Việt – tất cả": 0.588,
+      "Việt – personal": 0.532,
+      "Việt – software": 0.629
+    },
+    "Kết hợp (cân bằng nguồn)": {
+      "Apache (tiếng Anh)": 0.306,
+      "Việt – tất cả": 0.62,
+      "Việt – personal": 0.558,
+      "Việt – software": 0.687
+    }
+  },
+  "synthetic_tasks": 603
 }

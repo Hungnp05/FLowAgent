@@ -1,5 +1,8 @@
+from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 
+import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -95,3 +98,9 @@ def score_predictions(true_labels: pd.Series, predicted_labels: list[str]) -> Mo
         weighted_f1=f1_score(true_labels, predicted_labels, average="weighted", zero_division=0),
         per_class_f1={label: report[label]["f1-score"] for label in CLASS_LABELS},
     )
+
+
+def source_balanced_weights(sources: Sequence[str]) -> np.ndarray:
+    """Weight rows so every data source contributes the same total weight to training."""
+    counts = Counter(sources)
+    return np.array([len(sources) / (len(counts) * counts[source]) for source in sources])

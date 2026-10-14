@@ -1,0 +1,18 @@
+{
+  "generator": "gemini / gemini-3.1-flash-lite",
+  "prompt_version": 1,
+  "created": "2026-10-14",
+  "generated": 640,
+  "after_length_and_exact_dedup": 637,
+  "near_duplicates_removed": 2,
+  "eval_leakage_removed": 5,
+  "kept": 630,
+  "leakage_threshold": 0.75,
+  "filter_630": {
+    "generated": 630,
+    "after_length_and_exact_dedup": 629,
+    "near_duplicates_removed": 0,
+    "eval_leakage_removed": 26,
+    "kept": 603
+  }
+}

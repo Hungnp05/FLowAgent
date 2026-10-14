@@ -28,6 +28,9 @@ dependencies = [
 flowagent-reset-pin = "flowagent.security.reset_pin:main"
 flowagent-collect-jira = "flowagent.ml.jira_collection:main"
 flowagent-train-priority = "flowagent.ml.train_priority_model:main"
+flowagent-generate-tasks = "flowagent.ml.synthetic_tasks:main"
+flowagent-eval = "flowagent.evaluation.runner:main"
+flowagent-eval-report = "flowagent.evaluation.report:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=9.1", "ruff>=0.17"]
@@ -48,4 +51,5 @@ select = ["E", "F", "I", "B", "UP", "SIM", "N", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/flowagent/agent/prompts.py" = ["E501"]
-"*.ipynb" = ["E402", "E501"]
+"*.ipynb" = ["E402", "E501", "RUF001"]
+"src/flowagent/ml/synthetic_tasks.py" = ["E501"]

@@ -11,7 +11,7 @@ Trợ lý AI quản lý công việc bằng tiếng Việt: thêm, sửa, tìm v
 - Bảng Kanban và cảnh báo việc quá hạn, sắp đến hạn.
 - Tự động đổi model khi model chính lỗi (Gemini → Gemini dự phòng → Groq).
 - Trang Cài đặt API bảo vệ bằng mã PIN; API key được mã hoá trước khi lưu.
-- Mô hình học máy gợi ý độ ưu tiên khi người dùng không nói rõ, huấn luyện trên 36.000 issue thật của Apache.
+- Mô hình học máy gợi ý độ ưu tiên khi người dùng không nói rõ, huấn luyện trên 36.000 issue thật của Apache cộng 603 công việc tiếng Việt tổng hợp.
 
 ## Công nghệ
 
@@ -87,22 +87,27 @@ Ra lệnh bằng tiếng Việt tự nhiên:
 
 ## Mô hình học máy: dự đoán độ ưu tiên
 
-- **Dữ liệu:** 36.000 issue đã xử lý của 12 dự án Apache (Kafka, Spark, Hadoop…), thu thập qua REST API công khai của Apache Jira. Độ ưu tiên gốc được quy về 4 mức `low`, `medium`, `high`, `urgent`. Dữ liệu mất cân bằng mạnh: `medium` chiếm 74,5%.
-- **Mô hình:** so sánh baseline, TF-IDF + Logistic Regression, và embedding đa ngôn ngữ (`paraphrase-multilingual-MiniLM-L12-v2`) + Logistic Regression. Chi tiết trong [notebooks/priority_model.ipynb](notebooks/priority_model.ipynb).
+- **Dữ liệu thật:** 36.000 issue đã xử lý của 12 dự án Apache (Kafka, Spark, Hadoop…), thu thập qua REST API công khai của Apache Jira. Độ ưu tiên gốc được quy về 4 mức `low`, `medium`, `high`, `urgent`. Dữ liệu mất cân bằng mạnh: `medium` chiếm 74,5%.
+- **Dữ liệu tổng hợp (thích nghi miền):** 603 công việc tiếng Việt (cá nhân và phần mềm) do Gemini sinh theo định nghĩa từng mức ưu tiên. Dữ liệu được lọc trùng, lọc câu chứa từ lộ nhãn, và lọc mọi câu giống bộ kiểm tra (cosine ≥ 0,75).
+- **Mô hình:** embedding đa ngôn ngữ (`paraphrase-multilingual-MiniLM-L12-v2`) + Logistic Regression, trọng số cân bằng theo nguồn dữ liệu. Phần so sánh với baseline và TF-IDF nằm trong [notebooks/priority_model.ipynb](notebooks/priority_model.ipynb).
 
-| Mô hình | Macro-F1 (Apache, tiếng Anh) | Macro-F1 (64 việc tiếng Việt) |
-|---|---|---|
-| Baseline (lớp đông nhất) | 0,21 | – |
-| TF-IDF + LR | **0,41** | 0,20 |
-| Embedding đa ngôn ngữ + LR (dùng trong app) | 0,31 | **0,29** |
+| Mô hình / dữ liệu huấn luyện | Apache (tiếng Anh) | 64 việc tiếng Việt | Việc cá nhân |
+|---|---|---|---|
+| Baseline (lớp đông nhất) | 0,21 | – | – |
+| TF-IDF + LR, Apache | **0,41** | 0,20 | 0,10 |
+| Embedding + LR, Apache | 0,31 | 0,29 | 0,19 |
+| **Embedding + LR, Apache + tổng hợp (dùng trong app)** | 0,31 | **0,62** | **0,56** |
 
-App dùng mô hình embedding vì đây là mô hình duy nhất áp dụng được cho tiếng Việt. Mô hình chuyển giao khá tốt với công việc phần mềm, nhưng yếu với công việc cá nhân, nên app chỉ dùng kết quả như **gợi ý kèm độ tin cậy**. Biểu đồ nằm trong [docs/figures/](docs/figures/).
+*(macro-F1; đoán ngẫu nhiên khoảng 0,25)*
+
+App chỉ dùng kết quả như **gợi ý kèm độ tin cậy**. Độ ưu tiên do người dùng nói rõ luôn được ưu tiên. Bộ kiểm tra tiếng Việt nhỏ (64 câu, tự gán nhãn), nên các con số mang tính tham khảo. Biểu đồ nằm trong [docs/figures/](docs/figures/).
 
 Tái tạo kết quả:
 
 ```bash
 pip install -e ".[dev,notebook]"
-flowagent-collect-jira        # tải dữ liệu (~1 phút)
+flowagent-collect-jira        # tải dữ liệu Apache (~1 phút)
+flowagent-generate-tasks      # sinh lại dữ liệu tổng hợp (cần GEMINI_API_KEY; đã có sẵn trong datasets/)
 flowagent-train-priority      # huấn luyện và lưu models/priority_classifier.joblib
 ```
 
