@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flowagent"
+version = "0.1.0"
+description = "AI agent for task management and planning"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain>=1.4",
+    "langgraph>=1.2",
+    "langchain-core>=1.6",
+    "langchain-google-genai>=4.4",
+    "langchain-groq>=1.1",
+    "sqlmodel>=0.0.48",
+    "pydantic-settings>=2.15",
+    "streamlit>=1.65",
+    "plotly>=7.1",
+    "pandas>=2.2",
+    "scikit-learn>=1.9",
+    "joblib>=1.4",
+    "cryptography>=44",
+]
+
+[project.scripts]
+flowagent-reset-pin = "flowagent.security.reset_pin:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=9.1", "ruff>=0.17"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "N", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/flowagent/agent/prompts.py" = ["E501"]
