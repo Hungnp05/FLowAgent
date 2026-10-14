@@ -1,0 +1,65 @@
+text,label,domain
+"Website bán hàng bị sập toàn bộ, khách hàng không thể thanh toán",urgent,software
+"Máy chủ production hết dung lượng ổ đĩa, mọi dịch vụ ngừng hoạt động",urgent,software
+Lộ mật khẩu cơ sở dữ liệu trên kho mã công khai,urgent,software
+Ứng dụng bị crash ngay khi mở trên mọi điện thoại sau bản cập nhật,urgent,software
+Mất dữ liệu đơn hàng sau khi chạy migration cơ sở dữ liệu,urgent,software
+Không ai đăng nhập được vào hệ thống sau khi đổi chứng chỉ SSL,urgent,software
+Bản phát hành mới làm hỏng toàn bộ quy trình build và deploy,urgent,software
+Lỗ hổng bảo mật cho phép người lạ đọc dữ liệu khách hàng,urgent,software
+Trang thanh toán thỉnh thoảng trả về lỗi 500 với thẻ Visa,high,software
+Báo cáo doanh thu tính sai tổng tiền khi có mã giảm giá,high,software
+Truy vấn tìm kiếm sản phẩm chạy rất chậm khi có nhiều dữ liệu,high,software
+Email xác nhận đơn hàng không được gửi cho một số khách,high,software
+Rò rỉ bộ nhớ khiến server phải khởi động lại mỗi ngày,high,software
+Đồng bộ dữ liệu giữa hai cụm máy chủ bị trễ vài giờ,high,software
+Người dùng bị đăng xuất ngẫu nhiên khi đang thao tác,high,software
+API trả về dữ liệu sai múi giờ cho khách hàng ở nước ngoài,high,software
+Thêm chức năng xuất báo cáo ra file Excel,medium,software
+Cải thiện thông báo lỗi khi người dùng nhập sai định dạng ngày,medium,software
+Viết thêm unit test cho module thanh toán,medium,software
+Nâng cấp thư viện logging lên phiên bản mới,medium,software
+Hỗ trợ lọc đơn hàng theo khoảng thời gian,medium,software
+Tối ưu lại cấu hình bộ nhớ đệm cho trang chủ,medium,software
+Bổ sung tài liệu hướng dẫn cài đặt cho môi trường mới,medium,software
+Tách module xử lý ảnh thành dịch vụ riêng,medium,software
+Sửa lỗi chính tả trong trang giới thiệu,low,software
+Đổi màu nút lưu trên trang cài đặt cho đồng bộ,low,software
+Xoá đoạn mã không còn sử dụng trong thư mục tiện ích,low,software
+Căn lề lại tiêu đề bảng trong trang quản trị,low,software
+Cập nhật năm bản quyền ở chân trang,low,software
+Đổi tên biến cho dễ đọc hơn trong file cấu hình,low,software
+Thêm dấu chấm cuối câu trong thông báo thành công,low,software
+Sắp xếp lại thứ tự import trong các file mã nguồn,low,software
+Nộp hồ sơ học bổng hạn chót là tối nay,urgent,personal
+Đưa mẹ đi cấp cứu ở bệnh viện,urgent,personal
+Nhà bị rò rỉ ga cần gọi thợ sửa ngay,urgent,personal
+Đóng tiền điện hôm nay nếu không sẽ bị cắt điện,urgent,personal
+Nộp bài thi cuối kỳ trước 23h59 hôm nay,urgent,personal
+Mất ví có thẻ ngân hàng cần khoá thẻ ngay,urgent,personal
+Xe hỏng giữa đường cần gọi cứu hộ,urgent,personal
+Gia hạn hộ chiếu đã hết hạn trước chuyến bay ngày mai,urgent,personal
+Ôn thi môn giải tích cho kỳ thi tuần sau,high,personal
+Hoàn thành báo cáo thực tập nộp cho công ty vào thứ sáu,high,personal
+Chuẩn bị slide thuyết trình đồ án cho buổi bảo vệ,high,personal
+Đi khám sức khoẻ định kỳ theo lịch hẹn bác sĩ,high,personal
+Trả lời email của nhà tuyển dụng về lịch phỏng vấn,high,personal
+Đóng học phí học kỳ mới trước hạn,high,personal
+Sửa CV để nộp đơn ứng tuyển vị trí thực tập,high,personal
+Gửi hợp đồng thuê nhà đã ký cho chủ nhà,high,personal
+Đi siêu thị mua đồ ăn cho cả tuần,medium,personal
+Dọn dẹp phòng ngủ cuối tuần,medium,personal
+Đọc xong chương 3 cuốn sách lập trình,medium,personal
+Đặt lịch cắt tóc,medium,personal
+Học thêm 20 từ vựng tiếng Anh,medium,personal
+Đi tập gym ba buổi trong tuần,medium,personal
+Gọi điện hỏi thăm ông bà,medium,personal
+Lên kế hoạch chi tiêu cho tháng sau,medium,personal
+Sắp xếp lại ảnh trong điện thoại,low,personal
+Xem bộ phim mới ra mắt,low,personal
+Đổi hình nền máy tính,low,personal
+Tìm công thức nấu món mới để thử,low,personal
+Dọn lại hộp thư quảng cáo,low,personal
+Mua thêm cây cảnh cho bàn làm việc,low,personal
+Sắp xếp lại giá sách,low,personal
+Tìm hiểu một trò chơi mới,low,personal
