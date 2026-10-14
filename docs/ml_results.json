@@ -1,0 +1,89 @@
+{
+  "dataset": {
+    "collected": 36000,
+    "usable": 35795,
+    "train": 28636,
+    "test": 7159,
+    "label_counts": {
+      "low": 6984,
+      "medium": 26653,
+      "high": 862,
+      "urgent": 1296
+    }
+  },
+  "apache_test": {
+    "Baseline (lớp đông nhất)": {
+      "Accuracy": 0.745,
+      "Macro-F1": 0.213,
+      "Weighted-F1": 0.636
+    },
+    "TF-IDF + LR": {
+      "Accuracy": 0.629,
+      "Macro-F1": 0.41,
+      "Weighted-F1": 0.659
+    },
+    "Embedding đa ngôn ngữ + LR": {
+      "Accuracy": 0.428,
+      "Macro-F1": 0.306,
+      "Weighted-F1": 0.494
+    }
+  },
+  "apache_test_per_class_f1": {
+    "Baseline (lớp đông nhất)": {
+      "low": 0.0,
+      "medium": 0.854,
+      "high": 0.0,
+      "urgent": 0.0
+    },
+    "TF-IDF + LR": {
+      "low": 0.467,
+      "medium": 0.745,
+      "high": 0.145,
+      "urgent": 0.282
+    },
+    "Embedding đa ngôn ngữ + LR": {
+      "low": 0.402,
+      "medium": 0.546,
+      "high": 0.107,
+      "urgent": 0.17
+    }
+  },
+  "vietnamese_transfer": [
+    {
+      "Nhóm": "Tất cả",
+      "Mô hình": "TF-IDF + LR",
+      "Accuracy": 0.281,
+      "Macro-F1": 0.203
+    },
+    {
+      "Nhóm": "Tất cả",
+      "Mô hình": "Embedding đa ngôn ngữ + LR",
+      "Accuracy": 0.328,
+      "Macro-F1": 0.293
+    },
+    {
+      "Nhóm": "personal",
+      "Mô hình": "TF-IDF + LR",
+      "Accuracy": 0.25,
+      "Macro-F1": 0.1
+    },
+    {
+      "Nhóm": "personal",
+      "Mô hình": "Embedding đa ngôn ngữ + LR",
+      "Accuracy": 0.219,
+      "Macro-F1": 0.188
+    },
+    {
+      "Nhóm": "software",
+      "Mô hình": "TF-IDF + LR",
+      "Accuracy": 0.312,
+      "Macro-F1": 0.283
+    },
+    {
+      "Nhóm": "software",
+      "Mô hình": "Embedding đa ngôn ngữ + LR",
+      "Accuracy": 0.438,
+      "Macro-F1": 0.397
+    }
+  ]
+}
