@@ -1,0 +1,102 @@
+from datetime import datetime
+
+import pytest
+
+from flowagent.agent.tools import (
+    create_project_plan,
+    create_task,
+    list_tasks,
+    parse_local_datetime,
+    plan_my_day,
+    update_task,
+)
+from flowagent.db import crud
+from flowagent.db.models import Priority, TaskStatus
+from flowagent.db.session import session_scope
+from flowagent.errors import InvalidDateError, InvalidScheduleError
+
+
+def test_parse_date_only_means_end_of_day() -> None:
+    """A bare date is interpreted as 23:59 on that day."""
+    assert parse_local_datetime("2026-10-17") == datetime(2026, 10, 17, 23, 59)
+
+
+def test_parse_datetime_with_time() -> None:
+    """A date with time keeps the given hour and minute."""
+    assert parse_local_datetime("2026-10-17 14:30") == datetime(2026, 10, 17, 14, 30)
+
+
+def test_parse_invalid_datetime_raises() -> None:
+    """Unparseable input raises InvalidDateError with a format hint."""
+    with pytest.raises(InvalidDateError):
+        parse_local_datetime("thứ sáu")
+
+
+def test_create_task_tool_persists_task(engine, tool_config: dict) -> None:
+    """The create_task tool stores the task with a parsed deadline."""
+    result = create_task.invoke(
+        {"title": "Nộp báo cáo", "priority": "high", "deadline": "2026-10-17 17:00"}, tool_config
+    )
+    assert "Nộp báo cáo" in result
+    with session_scope(engine) as session:
+        task = crud.list_tasks(session)[0]
+    assert task.priority == Priority.HIGH
+    assert task.deadline == datetime(2026, 10, 17, 17, 0)
+
+
+def test_update_task_tool_changes_only_given_fields(engine, tool_config: dict) -> None:
+    """Fields not passed to update_task keep their previous values."""
+    create_task.invoke({"title": "Ôn thi", "priority": "high"}, tool_config)
+    update_task.invoke({"task_id": 1, "status": "done"}, tool_config)
+    with session_scope(engine) as session:
+        task = crud.get_task(session, 1)
+    assert task.status == TaskStatus.DONE
+    assert task.priority == Priority.HIGH
+
+
+def test_list_tasks_tool_reports_empty_result(tool_config: dict) -> None:
+    """An empty search returns a readable message rather than an empty string."""
+    assert "Không có" in list_tasks.invoke({}, tool_config)
+
+
+def test_plan_my_day_tool_lists_open_tasks(tool_config: dict) -> None:
+    """plan_my_day includes open tasks with their reasons."""
+    create_task.invoke({"title": "Gửi email", "estimated_minutes": 30}, tool_config)
+    assert "Gửi email" in plan_my_day.invoke({}, tool_config)
+
+
+def test_create_project_plan_schedules_steps(engine, tool_config: dict) -> None:
+    """create_project_plan creates a project whose steps get planned start times."""
+    steps = [
+        {"title": "Thiết kế giao diện", "estimated_minutes": 120},
+        {"title": "Viết backend", "estimated_minutes": 240},
+    ]
+    create_project_plan.invoke(
+        {"project_name": "Website", "goal": "Làm website bán hàng", "steps": steps}, tool_config
+    )
+    with session_scope(engine) as session:
+        project = crud.get_project_by_name(session, "Website")
+        tasks = crud.list_tasks(session)
+    assert all(task.project_id == project.id for task in tasks)
+    assert tasks[0].planned_start == datetime(2026, 10, 15, 9, 0)
+    assert tasks[1].planned_start == tasks[0].deadline
+
+
+def test_create_task_tool_sets_start_at_workday_start(engine, tool_config: dict) -> None:
+    """A bare start date is interpreted as 09:00 while a bare deadline stays at 23:59."""
+    create_task.invoke(
+        {"title": "Làm slide", "planned_start": "2026-10-20", "deadline": "2026-10-22"},
+        tool_config,
+    )
+    with session_scope(engine) as session:
+        task = crud.list_tasks(session)[0]
+    assert task.planned_start == datetime(2026, 10, 20, 9, 0)
+    assert task.deadline == datetime(2026, 10, 22, 23, 59)
+
+
+def test_create_task_tool_reports_start_after_deadline(tool_config: dict) -> None:
+    """An inverted schedule raises a domain error that the agent middleware returns to the model."""
+    with pytest.raises(InvalidScheduleError):
+        create_task.invoke(
+            {"title": "Sai", "planned_start": "2026-10-22", "deadline": "2026-10-20"}, tool_config
+        )
