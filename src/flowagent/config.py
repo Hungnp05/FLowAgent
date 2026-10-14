@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.1-flash-lite"
     gemini_fallback_model: str = "gemini-3.5-flash-lite"
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-120b"
     llm_temperature: float = 0.0
     llm_max_retries: int = 1
     llm_timeout_seconds: float = 60.0

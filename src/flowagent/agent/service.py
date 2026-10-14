@@ -47,6 +47,8 @@ class AgentReply:
     tool_calls: list[ToolCallRecord] = field(default_factory=list)
     pending_confirmation: dict[str, Any] | None = None
     model_name: str | None = None
+    model_calls: int = 0
+    total_tokens: int = 0
 
 
 def build_agent_graph(
@@ -86,6 +88,13 @@ def find_answering_model(messages: list[AnyMessage]) -> str | None:
         if isinstance(message, AIMessage):
             return message.response_metadata.get("model_name")
     return None
+
+
+def count_usage(messages: list[AnyMessage]) -> tuple[int, int]:
+    """Return how many model replies the turn needed and how many tokens they used."""
+    replies = [message for message in messages if isinstance(message, AIMessage)]
+    tokens = sum((reply.usage_metadata or {}).get("total_tokens", 0) for reply in replies)
+    return len(replies), tokens
 
 
 def collect_tool_calls(messages: list[AnyMessage]) -> list[ToolCallRecord]:
@@ -134,15 +143,20 @@ class FlowAgent:
         turn_messages = messages_since_last_human(snapshot.values["messages"])
         tool_calls = collect_tool_calls(turn_messages)
         model_name = find_answering_model(turn_messages)
+        model_calls, total_tokens = count_usage(turn_messages)
         if snapshot.interrupts:
             return AgentReply(
                 text=CONFIRMATION_REQUIRED_MESSAGE,
                 tool_calls=tool_calls,
                 pending_confirmation=snapshot.interrupts[0].value,
                 model_name=model_name,
+                model_calls=model_calls,
+                total_tokens=total_tokens,
             )
         return AgentReply(
             text=turn_messages[-1].text if turn_messages else "",
             tool_calls=tool_calls,
             model_name=model_name,
+            model_calls=model_calls,
+            total_tokens=total_tokens,
         )
