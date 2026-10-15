@@ -1,8 +1,9 @@
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 
 from flowagent.db.models import Priority, Task, TaskStatus
+from flowagent.errors import InvalidScheduleError
 
 PRIORITY_WEIGHTS: dict[Priority, float] = {
     Priority.LOW: 1.0,
@@ -13,6 +14,8 @@ PRIORITY_WEIGHTS: dict[Priority, float] = {
 DEFAULT_TASK_MINUTES = 60
 DEFAULT_DAILY_WORK_MINUTES = 240
 WORKDAY_START = time(hour=9)
+DAILY_WORK_MINUTE_OPTIONS = (240, 300, 360, 420, 480)
+MAX_PLANNING_DAYS = 366
 
 
 @dataclass(frozen=True)
@@ -55,6 +58,13 @@ class DailyPlan:
 class TimeSlot:
     start: datetime
     end: datetime
+
+
+@dataclass(frozen=True)
+class TimelinePlan:
+    slots: list[TimeSlot]
+    daily_work_minutes: int
+    fits_deadline: bool
 
 
 def classify_urgency(deadline: datetime | None, now: datetime) -> Urgency:
@@ -107,35 +117,100 @@ def rank_tasks_for_today(
     return DailyPlan(selected=selected, deferred=deferred, available_minutes=available_minutes)
 
 
+def needs_rescheduling(task: Task, now: datetime) -> bool:
+    """Report whether an open task is overdue or its planned start passed before it was begun."""
+    if task.status == TaskStatus.DONE:
+        return False
+    is_overdue = task.deadline is not None and task.deadline < now
+    missed_start = (
+        task.status == TaskStatus.TODO
+        and task.planned_start is not None
+        and task.planned_start < now
+    )
+    return is_overdue or missed_start
+
+
+def order_for_rescheduling(tasks: Sequence[Task], now: datetime) -> list[Task]:
+    """Order tasks to reschedule by the same priority-and-urgency score as the daily plan."""
+    return sorted(tasks, key=lambda task: (-score_task(task, now), task.id or 0))
+
+
 def first_work_start(after: datetime) -> datetime:
     """Return the next workday start time at or after the given moment."""
     today_start = datetime.combine(after.date(), WORKDAY_START)
     return today_start if after <= today_start else today_start + timedelta(days=1)
 
 
-def work_offset_to_datetime(
-    offset_minutes: int, timeline_start: datetime, daily_work_minutes: int, is_end: bool
-) -> datetime:
-    """Convert minutes of accumulated work into a calendar time inside working hours."""
-    day_index, minute_of_day = divmod(offset_minutes, daily_work_minutes)
-    if is_end and minute_of_day == 0 and day_index > 0:
-        day_index -= 1
-        minute_of_day = daily_work_minutes
-    return timeline_start + timedelta(days=day_index, minutes=minute_of_day)
+def subtract_busy(window: TimeSlot, busy: Sequence[TimeSlot]) -> list[TimeSlot]:
+    """Cut the busy periods out of a window and return the free pieces in order."""
+    free: list[TimeSlot] = []
+    cursor = window.start
+    for period in sorted(busy, key=lambda slot: slot.start):
+        if period.end <= cursor or period.start >= window.end:
+            continue
+        if period.start > cursor:
+            free.append(TimeSlot(cursor, period.start))
+        cursor = max(cursor, period.end)
+    if cursor < window.end:
+        free.append(TimeSlot(cursor, window.end))
+    return free
+
+
+def free_work_segments(
+    timeline_start: datetime, daily_work_minutes: int, busy: Sequence[TimeSlot]
+) -> Iterator[TimeSlot]:
+    """Yield the free parts of each day's working window, starting from timeline_start."""
+    for day_index in range(MAX_PLANNING_DAYS):
+        day_start = timeline_start + timedelta(days=day_index)
+        window = TimeSlot(day_start, day_start + timedelta(minutes=daily_work_minutes))
+        yield from subtract_busy(window, busy)
+
+
+def allocate_durations(
+    durations_minutes: Sequence[int], segments: Iterator[TimeSlot]
+) -> list[TimeSlot]:
+    """Fill free segments with sequential work, splitting a task across segments when needed."""
+    slots: list[TimeSlot] = []
+    segment = TimeSlot(datetime.min, datetime.min)
+    cursor = segment.end
+    for duration in durations_minutes:
+        remaining, start = timedelta(minutes=duration), None
+        while remaining > timedelta(0):
+            if cursor >= segment.end:
+                segment = next(segments, None)
+                if segment is None:
+                    raise InvalidScheduleError("Không tìm được đủ thời gian trống để xếp lịch.")
+                cursor = segment.start
+            start = start or cursor
+            step = min(remaining, segment.end - cursor)
+            cursor, remaining = cursor + step, remaining - step
+        slots.append(TimeSlot(start=start or cursor, end=cursor))
+    return slots
 
 
 def build_timeline(
     durations_minutes: Sequence[int],
     start_after: datetime,
     daily_work_minutes: int = DEFAULT_DAILY_WORK_MINUTES,
+    busy: Sequence[TimeSlot] = (),
 ) -> list[TimeSlot]:
-    """Lay out sequential tasks across working days and return one slot per task."""
-    timeline_start = first_work_start(start_after)
-    slots: list[TimeSlot] = []
-    offset_minutes = 0
-    for duration in durations_minutes:
-        start = work_offset_to_datetime(offset_minutes, timeline_start, daily_work_minutes, False)
-        offset_minutes += duration
-        end = work_offset_to_datetime(offset_minutes, timeline_start, daily_work_minutes, True)
-        slots.append(TimeSlot(start=start, end=end))
-    return slots
+    """Lay out sequential tasks across working days around busy periods, one slot per task."""
+    segments = free_work_segments(first_work_start(start_after), daily_work_minutes, busy)
+    return allocate_durations(durations_minutes, segments)
+
+
+def plan_within_deadline(
+    durations_minutes: Sequence[int],
+    start_after: datetime,
+    busy: Sequence[TimeSlot] = (),
+    finish_by: datetime | None = None,
+) -> TimelinePlan:
+    """Use the shortest working day that still finishes by finish_by, else the longest one."""
+    plan = TimelinePlan([], DEFAULT_DAILY_WORK_MINUTES, fits_deadline=True)
+    for daily_minutes in DAILY_WORK_MINUTE_OPTIONS:
+        slots = build_timeline(durations_minutes, start_after, daily_minutes, busy)
+        fits = finish_by is None or not slots or slots[-1].end <= finish_by
+        plan = TimelinePlan(slots, daily_minutes, fits_deadline=fits)
+        if fits:
+            return plan
+    return plan
