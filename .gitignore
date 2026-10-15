@@ -16,6 +16,7 @@ htmlcov/
 # Secrets
 .env
 .streamlit/secrets.toml
+documentation/
 
 # Local data
 data/
