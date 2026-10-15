@@ -231,7 +231,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate the FlowAgent agent on labelled cases.")
     parser.add_argument("--label", required=True, help="Version label, e.g. v1")
     parser.add_argument("--cases", type=Path, default=DEFAULT_CASES_PATH)
-    parser.add_argument("--only", help="Run only cases whose id starts with this prefix")
+    parser.add_argument(
+        "--only", help="Run only cases whose id starts with one of these comma-separated prefixes"
+    )
     parser.add_argument("--provider", choices=["gemini", "groq"], help="Provider to evaluate")
     parser.add_argument("--model", help="Override the model name of that provider")
     parser.add_argument("--resume", action="store_true", help="Skip cases already finished")
@@ -242,7 +244,8 @@ def main() -> None:
     )
     args = parser.parse_args()
     all_cases = load_cases(args.cases)
-    cases = [case for case in all_cases if not args.only or case.id.startswith(args.only)]
+    prefixes = tuple(args.only.split(",")) if args.only else ("",)
+    cases = [case for case in all_cases if case.id.startswith(prefixes)]
     build_agent, model_label = build_eval_agent_factory(args.provider, args.model)
     output_path = RESULTS_DIR / f"{args.label}.json"
     records_by_id = load_previous_records(output_path, model_label) if args.resume else {}
