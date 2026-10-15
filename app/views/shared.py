@@ -1,8 +1,11 @@
 import logging
+import sqlite3
+import uuid
 from pathlib import Path
 
 import streamlit as st
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from sqlalchemy import Engine
 
 from flowagent.agent.factory import create_flow_agent
@@ -11,7 +14,8 @@ from flowagent.agent.service import FlowAgent
 from flowagent.agent.tools import PriorityPredictorFn
 from flowagent.config import get_settings
 from flowagent.db import crud
-from flowagent.db.models import Priority, Task, TaskStatus
+from flowagent.db.app_settings import SettingKey, get_setting, set_setting
+from flowagent.db.models import MemoryNote, Priority, Task, TaskStatus
 from flowagent.db.schemas import TaskFilter, TaskUpdate
 from flowagent.db.session import create_db_engine, session_scope
 from flowagent.ml.predictor import load_priority_predictor
@@ -46,9 +50,44 @@ def get_secret_box() -> SecretBox:
 
 
 @st.cache_resource
-def get_checkpointer() -> InMemorySaver:
-    """Keep conversation memory alive even when the agent is rebuilt with new settings."""
-    return InMemorySaver()
+def get_checkpointer() -> BaseCheckpointSaver:
+    """Store conversations in SQLite so they survive agent rebuilds and server restarts."""
+    history_path = Path(get_settings().chat_history_path)
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    return SqliteSaver(sqlite3.connect(history_path, check_same_thread=False))
+
+
+def get_chat_thread_id() -> str:
+    """Return the saved id of the current conversation, creating one on first use."""
+    with session_scope(get_engine()) as session:
+        thread_id = get_setting(session, SettingKey.CHAT_THREAD_ID)
+    return thread_id or start_new_chat_thread()
+
+
+def start_new_chat_thread() -> str:
+    """Begin a fresh conversation; earlier ones stay in the history database."""
+    thread_id = str(uuid.uuid4())
+    with session_scope(get_engine()) as session:
+        set_setting(session, SettingKey.CHAT_THREAD_ID, thread_id)
+    return thread_id
+
+
+def load_memories() -> list[MemoryNote]:
+    """Read the facts the assistant remembers about the user."""
+    with session_scope(get_engine()) as session:
+        return list(crud.list_memories(session))
+
+
+def add_memory(content: str) -> None:
+    """Save a fact for the assistant to remember."""
+    with session_scope(get_engine()) as session:
+        crud.add_memory(session, content)
+
+
+def forget_memory(memory_id: int) -> None:
+    """Delete one remembered fact."""
+    with session_scope(get_engine()) as session:
+        crud.delete_memory(session, memory_id)
 
 
 def load_current_llm_config() -> LlmConfig:
@@ -85,6 +124,12 @@ def load_tasks(task_filter: TaskFilter | None = None) -> list[Task]:
     """Fetch tasks from the database for rendering."""
     with session_scope(get_engine()) as session:
         return list(crud.list_tasks(session, task_filter))
+
+
+def change_task_priority(task_id: int, priority: Priority) -> None:
+    """Persist a new priority for a task."""
+    with session_scope(get_engine()) as session:
+        crud.update_task(session, task_id, TaskUpdate(priority=priority))
 
 
 def change_task_status(task_id: int, status: TaskStatus) -> None:
