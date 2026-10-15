@@ -94,16 +94,16 @@
       "Việt – software": 0.397
     },
     "Chỉ dữ liệu tổng hợp": {
-      "Apache (tiếng Anh)": 0.181,
-      "Việt – tất cả": 0.588,
-      "Việt – personal": 0.532,
-      "Việt – software": 0.629
+      "Apache (tiếng Anh)": 0.171,
+      "Việt – tất cả": 0.626,
+      "Việt – personal": 0.585,
+      "Việt – software": 0.66
     },
     "Kết hợp (cân bằng nguồn)": {
-      "Apache (tiếng Anh)": 0.306,
-      "Việt – tất cả": 0.62,
-      "Việt – personal": 0.558,
-      "Việt – software": 0.687
+      "Apache (tiếng Anh)": 0.311,
+      "Việt – tất cả": 0.7,
+      "Việt – personal": 0.689,
+      "Việt – software": 0.712
     }
   },
   "synthetic_tasks": 603
