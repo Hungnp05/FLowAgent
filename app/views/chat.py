@@ -1,12 +1,19 @@
 import logging
-import uuid
 
 import streamlit as st
 
 from flowagent.agent.llm import describe_llm_error
-from flowagent.agent.service import AgentReply, FlowAgent
+from flowagent.agent.service import ChatMessage, FlowAgent
+from flowagent.db.models import MAX_MEMORY_LENGTH
 from flowagent.errors import MissingApiKeyError, SecretDecryptionError
-from views.shared import get_agent
+from views.shared import (
+    add_memory,
+    forget_memory,
+    get_agent,
+    get_chat_thread_id,
+    load_memories,
+    start_new_chat_thread,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,50 +21,44 @@ CHAT_EXAMPLES = (
     "Thêm việc nộp báo cáo vào thứ 6 tuần sau, ưu tiên cao",
     "Hôm nay tôi nên làm gì?",
     "Tôi muốn làm website bán hàng trong 2 tuần, lập kế hoạch giúp tôi",
+    "Tóm tắt tiến độ tuần này",
+    "Lịch tuần này có bị trùng không?",
 )
-
-
-def init_chat_state() -> None:
-    """Give each browser session its own conversation thread and history."""
-    st.session_state.setdefault("thread_id", str(uuid.uuid4()))
-    st.session_state.setdefault("chat_history", [])
-    st.session_state.setdefault("pending_confirmation", None)
-
-
-def record_reply(reply: AgentReply) -> None:
-    """Store the agent reply in the chat history and remember any pending confirmation."""
-    st.session_state.chat_history.append(
-        {"role": "assistant", "content": reply.text, "model": reply.model_name}
-    )
-    st.session_state.pending_confirmation = reply.pending_confirmation
+NOTICES_KEY = "chat_notices"
+CONFIRMATION_TEXTS = {
+    "delete_task": ("Xác nhận xoá công việc?", "Xác nhận xoá"),
+    "delete_event": ("Xác nhận xoá lịch trình?", "Xác nhận xoá"),
+    "create_tasks_from_notes": ("Tạo các việc sau từ biên bản?", "Tạo công việc"),
+    "reschedule_tasks": ("Áp dụng lịch mới cho các việc sau?", "Áp dụng"),
+}
+DEFAULT_CONFIRMATION = ("Xác nhận thao tác?", "Đồng ý")
 
 
 def run_agent_safely(agent: FlowAgent, action: str, **kwargs: object) -> None:
     """Call an agent method and surface LLM or network failures in the UI instead of crashing."""
+    st.session_state[NOTICES_KEY] = []
     try:
         with st.spinner("FlowAgent đang xử lý..."):
-            record_reply(getattr(agent, action)(st.session_state.thread_id, **kwargs))
+            getattr(agent, action)(get_chat_thread_id(), **kwargs)
     except Exception as error:
         logger.exception("Agent call failed")
-        st.session_state.chat_history.append(
-            {"role": "assistant", "content": f"⚠️ {describe_llm_error(error)}"}
-        )
+        st.session_state[NOTICES_KEY] = [f"⚠️ {describe_llm_error(error)}"]
 
 
-def render_message(message: dict[str, str | None]) -> None:
+def render_message(message: ChatMessage) -> None:
     """Show one chat message, noting which model wrote an assistant reply."""
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-        if message.get("model"):
-            st.caption(f"Trả lời bởi {message['model']}")
+    with st.chat_message(message.role):
+        st.markdown(message.text)
+        if message.model_name:
+            st.caption(f"Trả lời bởi {message.model_name}")
 
 
-def render_confirmation(agent: FlowAgent) -> None:
-    """Show the pending destructive action with approve and cancel buttons."""
-    pending = st.session_state.pending_confirmation
-    st.warning(f"Xác nhận xoá công việc?\n\n{pending['summary']}")
+def render_confirmation(agent: FlowAgent, pending: dict) -> None:
+    """Show the pending action with approve and cancel buttons."""
+    question, approve_label = CONFIRMATION_TEXTS.get(pending.get("action"), DEFAULT_CONFIRMATION)
+    st.warning(f"{question}\n\n{pending['summary']}")
     approve_column, cancel_column = st.columns(2)
-    if approve_column.button("Xác nhận xoá", type="primary", width="stretch"):
+    if approve_column.button(approve_label, type="primary", width="stretch"):
         run_agent_safely(agent, "resolve_confirmation", is_approved=True)
         st.rerun()
     if cancel_column.button("Huỷ", width="stretch"):
@@ -65,23 +66,55 @@ def render_confirmation(agent: FlowAgent) -> None:
         st.rerun()
 
 
+def render_memory_panel() -> None:
+    """List remembered facts in the sidebar with delete buttons and a field to add one."""
+    with st.sidebar.expander("🧠 Trí nhớ dài hạn"):
+        memories = load_memories()
+        if not memories:
+            st.caption("Trợ lý chưa ghi nhớ điều gì. Hãy kể về thói quen làm việc của bạn.")
+        for memory in memories:
+            text_column, delete_column = st.columns([5, 1], vertical_alignment="center")
+            text_column.markdown(memory.content)
+            if delete_column.button("✕", key=f"forget-{memory.id}", help="Quên điều này"):
+                forget_memory(memory.id)
+                st.rerun()
+        with st.form("add-memory", clear_on_submit=True, border=False):
+            new_fact = st.text_input("Thêm điều cần nhớ", max_chars=MAX_MEMORY_LENGTH)
+            if st.form_submit_button("Ghi nhớ") and new_fact.strip():
+                add_memory(new_fact)
+                st.rerun()
+
+
+def render_chat_sidebar() -> None:
+    """Show the new-conversation button and the memory panel."""
+    if st.sidebar.button("🆕 Cuộc trò chuyện mới", width="stretch"):
+        start_new_chat_thread()
+        st.session_state[NOTICES_KEY] = []
+        st.rerun()
+    render_memory_panel()
+
+
 def render_chat_page() -> None:
     """Render the conversational assistant page."""
     st.title("💬 Trợ lý FlowAgent")
-    init_chat_state()
+    render_chat_sidebar()
     try:
         agent = get_agent()
     except (MissingApiKeyError, SecretDecryptionError) as error:
         st.warning(f"{error} Mở trang **Cài đặt API** ở thanh bên để thêm key.")
         return
-    if not st.session_state.chat_history:
+    thread_id = get_chat_thread_id()
+    history = agent.history(thread_id)
+    if not history:
         st.caption("Ví dụ: " + " · ".join(f"“{example}”" for example in CHAT_EXAMPLES))
-    for message in st.session_state.chat_history:
+    for message in history:
         render_message(message)
-    if st.session_state.pending_confirmation:
-        render_confirmation(agent)
+    for notice in st.session_state.get(NOTICES_KEY, []):
+        st.error(notice)
+    if pending := agent.pending_confirmation(thread_id):
+        render_confirmation(agent, pending)
         return
-    if user_text := st.chat_input("Nhập yêu cầu của bạn..."):
-        st.session_state.chat_history.append({"role": "user", "content": user_text})
+    if user_text := st.chat_input("Nhập yêu cầu hoặc dán biên bản họp..."):
+        render_message(ChatMessage(role="user", text=user_text))
         run_agent_safely(agent, "send", user_text=user_text)
         st.rerun()
