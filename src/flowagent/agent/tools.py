@@ -5,20 +5,38 @@ from datetime import date, datetime, time
 
 from langchain.agents.middleware import ToolCallRequest
 from langchain_core.runnables import RunnableConfig
-from langchain_core.tools import BaseTool, tool
+from langchain_core.tools import tool
 from langgraph.types import interrupt
 from pydantic import BaseModel, Field
 from sqlalchemy import Engine
+from sqlmodel import Session
 
 from flowagent.agent.formatting import (
+    format_conflict_note,
     format_daily_plan,
+    format_deadline_fit,
+    format_event,
+    format_events,
     format_projects,
     format_task,
     format_tasks,
 )
 from flowagent.db import crud
-from flowagent.db.models import Priority, TaskStatus
-from flowagent.db.schemas import TaskCreate, TaskFilter, TaskUpdate
+from flowagent.db.models import (
+    MINUTES_PER_DAY,
+    Priority,
+    Recurrence,
+    ScheduleEvent,
+    Task,
+    TaskStatus,
+)
+from flowagent.db.schemas import (
+    ScheduleEventCreate,
+    ScheduleEventUpdate,
+    TaskCreate,
+    TaskFilter,
+    TaskUpdate,
+)
 from flowagent.db.session import session_scope
 from flowagent.errors import (
     FlowAgentError,
@@ -27,12 +45,19 @@ from flowagent.errors import (
     PriorityModelUnavailableError,
 )
 from flowagent.ml.labels import PriorityPrediction
+from flowagent.planning.calendar import (
+    event_entry_key,
+    event_to_entry,
+    occurrences_by_day,
+    work_entry_key,
+)
 from flowagent.planning.scheduler import (
     DEFAULT_DAILY_WORK_MINUTES,
     WORKDAY_START,
-    build_timeline,
+    plan_within_deadline,
     rank_tasks_for_today,
 )
+from flowagent.schedule_queries import read_busy_periods, read_conflicts_for
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +66,8 @@ DATE_ONLY_LENGTH = len("YYYY-MM-DD")
 END_OF_DAY = time(hour=23, minute=59)
 MAX_STEP_MINUTES = 2400
 DELETE_CANCELLED_MESSAGE = "Người dùng đã huỷ thao tác xoá."
+LOW_CONFIDENCE_NOTE = " (mô hình chưa đủ chắc chắn nên để mức trung bình)"
+DEFAULT_EVENT_MINUTES = 60
 
 
 PriorityPredictorFn = Callable[[str], PriorityPrediction]
@@ -93,9 +120,27 @@ def suggest_priority(deps: ToolDeps, title: str, description: str) -> tuple[Prio
     except Exception:
         logger.exception("Priority model failed; using medium")
         return Priority.MEDIUM, ""
+    if not prediction.is_confident:
+        return Priority.MEDIUM, LOW_CONFIDENCE_NOTE
     return (
         prediction.priority,
         f" (độ ưu tiên do mô hình gợi ý, tin cậy {prediction.confidence:.0%})",
+    )
+
+
+def describe_task_conflicts(session: Session, task: Task) -> str:
+    """Warn when a task's planned work block clashes with events or other tasks."""
+    if task.planned_start is None:
+        return ""
+    conflicts = read_conflicts_for(session, work_entry_key(task.id or 0), task.planned_start.date())
+    return format_conflict_note(conflicts)
+
+
+def describe_event_conflicts(session: Session, event: ScheduleEvent, now: datetime) -> str:
+    """Warn when an event clashes with other events or planned work in the next two weeks."""
+    first_day = max(event.start_at.date(), now.date())
+    return format_conflict_note(
+        read_conflicts_for(session, event_entry_key(event.id or 0), first_day)
     )
 
 
@@ -136,7 +181,8 @@ def create_task(
                 project_id=project_id,
             ),
         )
-        return f"Đã tạo: {format_task(task)}{suggestion_note}"
+        conflict_note = describe_task_conflicts(session, task)
+        return f"Đã tạo: {format_task(task)}{suggestion_note}{conflict_note}"
 
 
 @tool
@@ -191,7 +237,8 @@ def update_task(
         )
     changes = TaskUpdate(**given_changes)
     with session_scope(deps.engine) as session:
-        return f"Đã cập nhật: {format_task(crud.update_task(session, task_id, changes))}"
+        task = crud.update_task(session, task_id, changes)
+        return f"Đã cập nhật: {format_task(task)}{describe_task_conflicts(session, task)}"
 
 
 @tool
@@ -220,11 +267,19 @@ def plan_my_day(config: RunnableConfig, available_minutes: int = DEFAULT_DAILY_W
 
 @tool
 def create_project_plan(
-    project_name: str, goal: str, steps: list[PlanStep], config: RunnableConfig
+    project_name: str,
+    goal: str,
+    steps: list[PlanStep],
+    config: RunnableConfig,
+    finish_by: str | None = None,
 ) -> str:
     """Chỉ khi người dùng nhờ lập kế hoạch/chia nhỏ mục tiêu lớn: tạo dự án 3-10 bước."""
     deps = get_deps(config)
-    slots = build_timeline([step.estimated_minutes for step in steps], deps.clock())
+    target_end = parse_optional_datetime(finish_by)
+    with session_scope(deps.engine) as session:
+        busy = read_busy_periods(session, deps.clock())
+    durations = [step.estimated_minutes for step in steps]
+    plan = plan_within_deadline(durations, deps.clock(), busy, target_end)
     with session_scope(deps.engine) as session:
         project = crud.create_project(session, project_name, goal)
         tasks = [
@@ -239,9 +294,12 @@ def create_project_plan(
                     project_id=project.id,
                 ),
             )
-            for step, slot in zip(steps, slots, strict=True)
+            for step, slot in zip(steps, plan.slots, strict=True)
         ]
-        return f"Đã tạo dự án '{project.name}' với {len(tasks)} bước:\n{format_tasks(tasks)}"
+        fit_note = format_deadline_fit(plan, target_end)
+        return (
+            f"Đã tạo dự án '{project.name}' với {len(tasks)} bước:\n{format_tasks(tasks)}{fit_note}"
+        )
 
 
 @tool
@@ -251,6 +309,11 @@ def predict_priority(text: str, config: RunnableConfig) -> str:
     if deps.predict_priority is None:
         raise PriorityModelUnavailableError("Mô hình dự đoán độ ưu tiên chưa được cài đặt.")
     prediction = deps.predict_priority(text)
+    if not prediction.is_confident:
+        return (
+            f"Mô hình chưa đủ chắc chắn (nghiêng về {prediction.priority.value}, "
+            f"{prediction.confidence:.0%}); nên để medium nếu không có thêm thông tin."
+        )
     return f"Gợi ý: {prediction.priority.value} (độ tin cậy {prediction.confidence:.0%})"
 
 
@@ -262,13 +325,103 @@ def list_projects(config: RunnableConfig) -> str:
         return format_projects(crud.list_projects(session))
 
 
-ALL_TOOLS: list[BaseTool] = [
-    create_task,
-    list_tasks,
-    update_task,
-    delete_task,
-    plan_my_day,
-    create_project_plan,
-    predict_priority,
-    list_projects,
-]
+def parse_event_start(start: str, all_day: bool) -> datetime:
+    """Parse an event start; all-day events start at midnight, bare dates otherwise at 09:00."""
+    moment = parse_local_datetime(start, WORKDAY_START)
+    return datetime.combine(moment.date(), time.min) if all_day else moment
+
+
+@tool
+def create_event(
+    title: str,
+    start: str,
+    config: RunnableConfig,
+    duration_minutes: int = DEFAULT_EVENT_MINUTES,
+    all_day: bool = False,
+    recurrence: Recurrence = Recurrence.NONE,
+    reminder_minutes: int = 0,
+    priority: Priority = Priority.MEDIUM,
+    note: str = "",
+) -> str:
+    """Tạo lịch trình theo khung giờ (họp, học, tập gym...), có thể lặp; start là lần đầu tiên."""
+    deps = get_deps(config)
+    event_in = ScheduleEventCreate(
+        title=title,
+        note=note,
+        start_at=parse_event_start(start, all_day),
+        duration_minutes=MINUTES_PER_DAY if all_day else duration_minutes,
+        all_day=all_day,
+        recurrence=recurrence,
+        reminder_minutes=reminder_minutes,
+        priority=priority,
+    )
+    with session_scope(deps.engine) as session:
+        event = crud.create_event(session, event_in)
+        conflict_note = describe_event_conflicts(session, event, deps.clock())
+        return f"Đã tạo lịch trình: {format_event(event)}{conflict_note}"
+
+
+@tool
+def list_events(config: RunnableConfig, keyword: str | None = None, day: str | None = None) -> str:
+    """Tìm lịch trình theo từ khoá, hoặc xem các lịch diễn ra trong một ngày 'YYYY-MM-DD'."""
+    deps = get_deps(config)
+    with session_scope(deps.engine) as session:
+        events = crud.find_events(session, keyword)
+    if day is None:
+        return format_events(events)
+    target_day = parse_local_datetime(day).date()
+    occurrences = occurrences_by_day(
+        [event_to_entry(event) for event in events], target_day, target_day
+    )
+    by_id = {event.id: event for event in events}
+    return format_events([by_id[item.entry.source_id] for item in occurrences.get(target_day, [])])
+
+
+@tool
+def update_event(
+    event_id: int,
+    config: RunnableConfig,
+    title: str | None = None,
+    start: str | None = None,
+    duration_minutes: int | None = None,
+    all_day: bool | None = None,
+    recurrence: Recurrence | None = None,
+    reminder_minutes: int | None = None,
+    priority: Priority | None = None,
+    note: str | None = None,
+) -> str:
+    """Sửa lịch trình theo id: giờ, thời lượng, lặp lại, nhắc, ưu tiên, tên."""
+    deps = get_deps(config)
+    provided_changes = {
+        "title": title,
+        "start_at": parse_event_start(start, bool(all_day)) if start else None,
+        "duration_minutes": duration_minutes,
+        "all_day": all_day,
+        "recurrence": recurrence,
+        "reminder_minutes": reminder_minutes,
+        "priority": priority,
+        "note": note,
+    }
+    given_changes = {field: value for field, value in provided_changes.items() if value is not None}
+    if not given_changes:
+        raise NoChangesError(
+            "Không có trường nào để cập nhật; chỉ gọi update_event khi cần đổi giá trị."
+        )
+    with session_scope(deps.engine) as session:
+        event = crud.update_event(session, event_id, ScheduleEventUpdate(**given_changes))
+        conflict_note = describe_event_conflicts(session, event, deps.clock())
+        return f"Đã cập nhật lịch trình: {format_event(event)}{conflict_note}"
+
+
+@tool
+def delete_event(event_id: int, config: RunnableConfig) -> str:
+    """Xoá lịch trình theo id (mọi lần lặp); hệ thống sẽ hỏi người dùng xác nhận trước khi xoá."""
+    deps = get_deps(config)
+    with session_scope(deps.engine) as session:
+        summary = format_event(crud.get_event(session, event_id))
+    is_approved = interrupt({"action": "delete_event", "event_id": event_id, "summary": summary})
+    if not is_approved:
+        return DELETE_CANCELLED_MESSAGE
+    with session_scope(deps.engine) as session:
+        crud.delete_event(session, event_id)
+    return f"Đã xoá lịch trình: {summary}"
