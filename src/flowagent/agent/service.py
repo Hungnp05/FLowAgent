@@ -23,13 +23,15 @@ from sqlalchemy import Engine
 
 from flowagent.agent.prompts import build_system_prompt
 from flowagent.agent.tools import (
-    ALL_TOOLS,
     DEPS_CONFIG_KEY,
     PriorityPredictorFn,
     ToolDeps,
     format_tool_error,
 )
+from flowagent.agent.toolset import ALL_TOOLS
 from flowagent.clock import now_local
+from flowagent.db import crud
+from flowagent.db.session import session_scope
 
 CONFIRMATION_REQUIRED_MESSAGE = "Bạn có chắc muốn thực hiện thao tác này không?"
 MAX_MODEL_CALLS_PER_TURN = 8
@@ -39,6 +41,13 @@ MAX_MODEL_CALLS_PER_TURN = 8
 class ToolCallRecord:
     name: str
     args: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class ChatMessage:
+    role: str
+    text: str
+    model_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -56,13 +65,14 @@ def build_agent_graph(
     fallback_models: Sequence[BaseChatModel],
     clock: Callable[[], datetime],
     checkpointer: BaseCheckpointSaver,
+    load_memories: Callable[[], list[str]] = list,
 ) -> CompiledStateGraph:
     """Assemble the agent with a dated prompt, model fallback, error handling and a loop guard."""
 
     @dynamic_prompt
     def dated_system_prompt(request: ModelRequest) -> str:
-        """Build the system prompt with the current time for every model call."""
-        return build_system_prompt(clock())
+        """Build the system prompt with the current time and memories for every model call."""
+        return build_system_prompt(clock(), load_memories())
 
     middleware: list[AgentMiddleware] = [
         dated_system_prompt,
@@ -97,6 +107,15 @@ def count_usage(messages: list[AnyMessage]) -> tuple[int, int]:
     return len(replies), tokens
 
 
+def to_chat_message(message: AnyMessage) -> ChatMessage | None:
+    """Turn a stored user or assistant message into a displayable one, skipping tool traffic."""
+    if isinstance(message, HumanMessage):
+        return ChatMessage(role="user", text=message.text)
+    if isinstance(message, AIMessage) and message.text.strip():
+        return ChatMessage("assistant", message.text, message.response_metadata.get("model_name"))
+    return None
+
+
 def collect_tool_calls(messages: list[AnyMessage]) -> list[ToolCallRecord]:
     """List every tool call the model requested in the given messages."""
     return [
@@ -120,8 +139,28 @@ class FlowAgent:
         """Wire the agent to a database, clock, conversation store, backup models and ML model."""
         self._deps = ToolDeps(engine=engine, clock=clock, predict_priority=predict_priority)
         self._graph = build_agent_graph(
-            chat_model, fallback_models, clock, checkpointer or InMemorySaver()
+            chat_model,
+            fallback_models,
+            clock,
+            checkpointer or InMemorySaver(),
+            self._read_memories,
         )
+
+    def _read_memories(self) -> list[str]:
+        """Load the long-term facts remembered about the user."""
+        with session_scope(self._deps.engine) as session:
+            return [note.content for note in crud.list_memories(session)]
+
+    def history(self, thread_id: str) -> list[ChatMessage]:
+        """Return the user and assistant messages saved for a conversation thread."""
+        snapshot = self._graph.get_state(self._run_config(thread_id))
+        messages = snapshot.values.get("messages", [])
+        return [chat for chat in map(to_chat_message, messages) if chat is not None]
+
+    def pending_confirmation(self, thread_id: str) -> dict[str, Any] | None:
+        """Return the confirmation request a thread is waiting on, if any."""
+        snapshot = self._graph.get_state(self._run_config(thread_id))
+        return snapshot.interrupts[0].value if snapshot.interrupts else None
 
     def send(self, thread_id: str, user_text: str) -> AgentReply:
         """Send a user message in a conversation thread and return the agent's reply."""
