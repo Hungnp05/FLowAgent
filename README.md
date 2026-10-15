@@ -6,7 +6,13 @@ Trợ lý AI quản lý công việc bằng tiếng Việt: thêm, sửa, tìm v
 
 - Quản lý công việc bằng hội thoại, hiểu mốc thời gian tương đối ("thứ 6 tuần sau", "chiều mai").
 - "Hôm nay tôi nên làm gì?": xếp việc theo độ ưu tiên, hạn chót và thời gian rảnh.
-- Lập kế hoạch dự án: agent chia mục tiêu thành các bước, tự xếp lịch và hiển thị Gantt.
+- Lập kế hoạch dự án: agent chia mục tiêu thành các bước, tự xếp lịch quanh các lịch đã bận, cố kịp thời hạn người dùng đặt ("xong trước thứ 6") và hiển thị Gantt.
+- Dán biên bản họp: agent trích các việc cần làm (người phụ trách, hạn chót) và tóm tắt các quyết định.
+- Tự xếp lại lịch khi có việc trễ hạn hoặc việc phát sinh chen vào (hỏi xác nhận trước khi áp dụng).
+- Cảnh báo lịch trùng giờ và việc có nguy cơ trễ hạn; báo cáo tiến độ ngày/tuần, tải về hoặc soạn email.
+- Trí nhớ: lịch sử trò chuyện được lưu lại sau khi tắt app; trợ lý ghi nhớ lâu dài thói quen của người dùng.
+- Xuất lịch `.ics` (Google Calendar, Outlook) và công việc `.csv` (Excel, Sheets, Notion, Trello).
+- Lịch tuần/tháng/năm/ngày với lịch trình lặp lại (hằng ngày, hằng tuần...); trợ lý tạo được lịch lặp, ví dụ "tập gym 18h–20h hằng ngày".
 - Hỏi xác nhận trước thao tác nguy hiểm (xoá).
 - Bảng Kanban và cảnh báo việc quá hạn, sắp đến hạn.
 - Tự động đổi model khi model chính lỗi (Gemini → Gemini dự phòng → Groq).
@@ -69,16 +75,30 @@ Ra lệnh bằng tiếng Việt tự nhiên:
 | Xoá việc | "Xoá việc gọi điện cho mẹ" (app hỏi xác nhận trước khi xoá) |
 | Gợi ý trong ngày | "Hôm nay tôi nên làm gì?", "Hôm nay tôi rảnh 3 tiếng, nên làm gì?" |
 | Lập kế hoạch dự án | "Tôi muốn làm website bán hàng trong 2 tuần, lập kế hoạch giúp tôi" |
+| Biên bản họp → việc | Dán biên bản: "Lan làm slide trước thứ 5 tuần sau; Minh viết báo cáo trước thứ 2..." |
+| Xếp lại lịch | "Mấy việc trễ hạn rồi, xếp lại lịch giúp tôi", "Có việc gấp sửa server 9h mai, dời các việc khác ra sau" |
+| Kiểm tra lịch | "Tuần này lịch có bị trùng không?", "Việc nào sắp trễ hạn?" |
+| Báo cáo | "Tóm tắt tiến độ tuần này", "Viết standup hôm nay" |
+| Ghi nhớ thói quen | "Tôi làm việc hiệu quả nhất buổi sáng, hãy nhớ điều đó" |
 
 - Chỉ nói ngày mà không nói giờ: hạn chót tính đến **23:59**, ngày bắt đầu tính từ **09:00**.
 - Độ ưu tiên: "gấp" là khẩn cấp, "quan trọng" là cao, "thấp" là thấp, còn lại là trung bình.
 - Dòng "Trả lời bởi …" dưới mỗi câu trả lời cho biết model nào đã xử lý.
+- Cuộc trò chuyện được lưu trong `data/chat_history.db`; nút **🆕 Cuộc trò chuyện mới** ở thanh bên bắt đầu lại từ đầu.
+- Mục **🧠 Trí nhớ dài hạn** ở thanh bên liệt kê những điều trợ lý đã ghi nhớ; bấm ✕ để xoá, hoặc tự thêm.
 
 ### 📋 Bảng công việc
 
 - Ba cột **Cần làm**, **Đang làm**, **Hoàn thành**. Bấm ◀ hoặc ▶ để chuyển việc giữa các cột.
 - Banner đỏ báo việc quá hạn, banner vàng báo việc đến hạn trong 24 giờ.
 - **Thêm công việc** để nhập tay, chọn được ngày giờ bắt đầu, hạn chót và thời lượng. Ngày bắt đầu phải trước hoặc bằng hạn chót.
+
+### 📊 Báo cáo & Xuất
+
+- Báo cáo **Hôm nay** / **Tuần này**: việc đã xong (đúng hạn hay không), đang làm, trễ hạn, sắp đến hạn.
+- **Tải báo cáo (.md)** hoặc **Soạn email báo cáo**: mở ứng dụng email với nội dung điền sẵn (app không tự gửi thư).
+- **Lịch (.ics)**: nhập vào Google Calendar (Cài đặt → Nhập và xuất) hoặc Outlook (Thêm lịch → Tải lên từ tệp); giữ nguyên lịch lặp và nhắc nhở.
+- **Công việc (.csv)**: mở bằng Excel, Google Sheets hoặc nhập vào Notion/Trello.
 
 ### 📅 Gantt
 
@@ -88,7 +108,7 @@ Ra lệnh bằng tiếng Việt tự nhiên:
 ## Mô hình học máy: dự đoán độ ưu tiên
 
 - **Dữ liệu thật:** 36.000 issue đã xử lý của 12 dự án Apache (Kafka, Spark, Hadoop…), thu thập qua REST API công khai của Apache Jira. Độ ưu tiên gốc được quy về 4 mức `low`, `medium`, `high`, `urgent`. Dữ liệu mất cân bằng mạnh: `medium` chiếm 74,5%.
-- **Dữ liệu tổng hợp (thích nghi miền):** 603 công việc tiếng Việt (cá nhân và phần mềm) do Gemini sinh theo định nghĩa từng mức ưu tiên. Dữ liệu được lọc trùng, lọc câu chứa từ lộ nhãn, và lọc mọi câu giống bộ kiểm tra (cosine ≥ 0,75).
+- **Dữ liệu tổng hợp (thích nghi miền):** 603 công việc tiếng Việt (cá nhân và phần mềm) do Gemini sinh theo định nghĩa từng mức ưu tiên. Dữ liệu được lọc trùng, lọc câu chứa từ lộ nhãn, và lọc mọi câu giống bộ kiểm tra (cosine ≥ 0,75). Sau đó 48 nhãn sai được sửa lại sau khi rà soát; nhật ký sửa nằm ở `datasets/vietnamese_tasks_synthetic_relabels.csv`.
 - **Mô hình:** embedding đa ngôn ngữ (`paraphrase-multilingual-MiniLM-L12-v2`) + Logistic Regression, trọng số cân bằng theo nguồn dữ liệu. Phần so sánh với baseline và TF-IDF nằm trong [notebooks/priority_model.ipynb](notebooks/priority_model.ipynb).
 
 | Mô hình / dữ liệu huấn luyện | Apache (tiếng Anh) | 64 việc tiếng Việt | Việc cá nhân |
@@ -96,11 +116,11 @@ Ra lệnh bằng tiếng Việt tự nhiên:
 | Baseline (lớp đông nhất) | 0,21 | – | – |
 | TF-IDF + LR, Apache | **0,41** | 0,20 | 0,10 |
 | Embedding + LR, Apache | 0,31 | 0,29 | 0,19 |
-| **Embedding + LR, Apache + tổng hợp (dùng trong app)** | 0,31 | **0,62** | **0,56** |
+| **Embedding + LR, Apache + tổng hợp đã rà soát (dùng trong app)** | 0,31 | **0,70** | **0,69** |
 
 *(macro-F1; đoán ngẫu nhiên khoảng 0,25)*
 
-App chỉ dùng kết quả như **gợi ý kèm độ tin cậy**. Độ ưu tiên do người dùng nói rõ luôn được ưu tiên. Bộ kiểm tra tiếng Việt nhỏ (64 câu, tự gán nhãn), nên các con số mang tính tham khảo. Biểu đồ nằm trong [docs/figures/](docs/figures/).
+App chỉ dùng kết quả như **gợi ý kèm độ tin cậy**: khi độ tin cậy dưới **0,55** (ngưỡng chọn trên tập kiểm định riêng), app để mức trung bình. Độ ưu tiên do người dùng nói rõ luôn được ưu tiên. Bộ kiểm tra tiếng Việt nhỏ (64 câu, tự gán nhãn), nên các con số mang tính tham khảo. Biểu đồ nằm trong [docs/figures/](docs/figures/).
 
 Tái tạo kết quả:
 
