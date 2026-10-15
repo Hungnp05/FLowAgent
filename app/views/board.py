@@ -5,15 +5,17 @@ import streamlit as st
 from flowagent.agent.formatting import format_datetime
 from flowagent.clock import now_local
 from flowagent.db import crud
-from flowagent.db.models import Priority, Task, TaskStatus
+from flowagent.db.models import Priority, Task, TaskStatus, shift_priority
 from flowagent.db.schemas import TaskCreate
 from flowagent.db.session import session_scope
 from flowagent.errors import InvalidScheduleError
 from flowagent.planning.scheduler import WORKDAY_START
+from views.alerts import render_schedule_alerts
 from views.shared import (
     PRIORITY_LABELS,
     STATUS_LABELS,
     STATUS_ORDER,
+    change_task_priority,
     change_task_status,
     get_engine,
     load_tasks,
@@ -89,11 +91,29 @@ def format_schedule(task: Task) -> str:
     return f"bắt đầu {format_datetime(task.planned_start)} · {deadline_text}"
 
 
+def render_priority_controls(task: Task) -> None:
+    """Show the task's priority with buttons to raise or lower it by one level."""
+    label_column, raise_column, lower_column = st.columns([3, 1, 1], vertical_alignment="center")
+    label_column.caption(PRIORITY_LABELS[task.priority])
+    raised = shift_priority(task.priority, 1)
+    lowered = shift_priority(task.priority, -1)
+    if raise_column.button(
+        "▲", key=f"raise-{task.id}", help="Tăng độ ưu tiên", disabled=raised == task.priority
+    ):
+        change_task_priority(task.id, raised)
+        st.rerun()
+    if lower_column.button(
+        "▼", key=f"lower-{task.id}", help="Giảm độ ưu tiên", disabled=lowered == task.priority
+    ):
+        change_task_priority(task.id, lowered)
+        st.rerun()
+
+
 def render_task_card(task: Task) -> None:
-    """Render one Kanban card with buttons to move it between columns."""
+    """Render one Kanban card with priority controls and buttons to move it between columns."""
     with st.container(border=True):
         st.markdown(f"**{task.title}**")
-        st.caption(PRIORITY_LABELS[task.priority])
+        render_priority_controls(task)
         st.caption(format_schedule(task))
         position = STATUS_ORDER.index(task.status)
         back_column, next_column = st.columns(2)
@@ -110,6 +130,7 @@ def render_board_page() -> None:
     st.title("📋 Bảng công việc")
     tasks = load_tasks()
     render_deadline_banner(tasks)
+    render_schedule_alerts()
     render_add_task_form()
     for column, status in zip(st.columns(len(STATUS_ORDER)), STATUS_ORDER, strict=True):
         column_tasks = [task for task in tasks if task.status == status]
