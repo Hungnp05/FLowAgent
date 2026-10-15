@@ -10,6 +10,10 @@ class ProjectNotFoundError(FlowAgentError, LookupError):
     pass
 
 
+class EventNotFoundError(FlowAgentError, LookupError):
+    pass
+
+
 class ProjectExistsError(FlowAgentError, ValueError):
     pass
 
@@ -43,4 +47,8 @@ class PriorityModelUnavailableError(FlowAgentError):
 
 
 class NoChangesError(FlowAgentError, ValueError):
+    pass
+
+
+class MemoryNotFoundError(FlowAgentError, LookupError):
     pass
