@@ -15,6 +15,7 @@ class SettingKey(StrEnum):
     GEMINI_FALLBACK_MODEL = "gemini_fallback_model"
     GROQ_API_KEY = "groq_api_key"
     GROQ_MODEL = "groq_model"
+    CHAT_THREAD_ID = "chat_thread_id"
 
 
 def get_setting(session: Session, key: SettingKey) -> str | None:
