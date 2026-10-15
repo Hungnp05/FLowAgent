@@ -3,21 +3,26 @@ import csv
 import json
 import logging
 import sys
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
 
 from flowagent.ml.embeddings import embed_texts, embed_texts_cached
 from flowagent.ml.jira_collection import DEFAULT_OUTPUT_PATH
 from flowagent.ml.predictor import DEFAULT_ARTIFACT_PATH, save_classifier
 from flowagent.ml.training import (
     LABEL_COLUMN,
+    RANDOM_SEED,
     TEXT_COLUMN,
     ModelScores,
+    apply_confidence_threshold,
     build_embedding_classifier,
+    choose_confidence_threshold,
     prepare_dataset,
     score_predictions,
     source_balanced_weights,
@@ -34,6 +39,7 @@ METRICS_PATH = Path("models/priority_classifier_metrics.json")
 APACHE_SOURCE = "apache"
 SYNTHETIC_SOURCE = "synthetic"
 ALL_DOMAINS = "all"
+VALIDATION_SIZE = 0.2
 
 
 @dataclass(frozen=True)
@@ -88,16 +94,75 @@ def fit_source_balanced(training: FeatureSet) -> LogisticRegression:
     )
 
 
-def score_on_vietnamese_tasks(classifier: LogisticRegression) -> dict[str, ModelScores]:
+def predict_with_threshold(
+    classifier: LogisticRegression, features: np.ndarray, threshold: float
+) -> list[str]:
+    """Predict labels, replacing low-confidence predictions with medium."""
+    return apply_confidence_threshold(
+        classifier.predict_proba(features), list(classifier.classes_), threshold
+    )
+
+
+def select_rows(feature_set: FeatureSet, rows: Sequence[int]) -> FeatureSet:
+    """Return the subset of a feature set at the given row positions."""
+    return FeatureSet(
+        feature_set.features[list(rows)],
+        [feature_set.labels[row] for row in rows],
+        [feature_set.sources[row] for row in rows],
+    )
+
+
+def tune_confidence_threshold(apache_train: FeatureSet, synthetic: FeatureSet) -> dict:
+    """Choose the confidence threshold on a held-out 20% of the synthetic Vietnamese data."""
+    train_rows, validation_rows = train_test_split(
+        range(len(synthetic.labels)),
+        test_size=VALIDATION_SIZE,
+        random_state=RANDOM_SEED,
+        stratify=synthetic.labels,
+    )
+    validation = select_rows(synthetic, validation_rows)
+    classifier = fit_source_balanced(
+        combine_feature_sets(apache_train, select_rows(synthetic, train_rows))
+    )
+    threshold, validation_macro_f1 = choose_confidence_threshold(
+        classifier.predict_proba(validation.features), list(classifier.classes_), validation.labels
+    )
+    unthresholded = score_predictions(
+        pd.Series(validation.labels), predict_with_threshold(classifier, validation.features, 0.0)
+    )
+    return {
+        "threshold": threshold,
+        "validation_rows": len(validation_rows),
+        "validation_macro_f1_without_threshold": unthresholded.macro_f1,
+        "validation_macro_f1_with_threshold": validation_macro_f1,
+    }
+
+
+def score_on_vietnamese_tasks(
+    classifier: LogisticRegression, threshold: float = 0.0
+) -> dict[str, ModelScores]:
     """Score the hand-labelled Vietnamese tasks overall and per domain."""
     vietnamese_tasks = pd.read_csv(VIETNAMESE_EVAL_PATH)
+    features = embed_texts(vietnamese_tasks[TEXT_COLUMN].tolist())
     predicted = vietnamese_tasks.assign(
-        predicted=classifier.predict(embed_texts(vietnamese_tasks[TEXT_COLUMN].tolist()))
+        predicted=predict_with_threshold(classifier, features, threshold)
     )
     groups = [(ALL_DOMAINS, predicted), *predicted.groupby("domain")]
     return {
         str(domain): score_predictions(group[LABEL_COLUMN], list(group["predicted"]))
         for domain, group in groups
+    }
+
+
+def evaluate(classifier: LogisticRegression, apache_test: FeatureSet, threshold: float) -> dict:
+    """Report Apache test and Vietnamese evaluation scores for one threshold."""
+    apache_predictions = predict_with_threshold(classifier, apache_test.features, threshold)
+    return {
+        "apache_test": asdict(score_predictions(apache_test.labels, apache_predictions)),
+        "vietnamese_tasks": {
+            domain: asdict(scores)
+            for domain, scores in score_on_vietnamese_tasks(classifier, threshold).items()
+        },
     }
 
 
@@ -109,21 +174,18 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=DEFAULT_ARTIFACT_PATH)
     args = parser.parse_args()
     apache_train, apache_test = embed_apache_splits(prepare_dataset(load_raw_issues(args.input)))
-    training = apache_train
+    training, tuning = apache_train, {"threshold": 0.0}
     if SYNTHETIC_TASKS_PATH.exists():
         synthetic = embed_synthetic_tasks(pd.read_csv(SYNTHETIC_TASKS_PATH))
+        tuning = tune_confidence_threshold(apache_train, synthetic)
         training = combine_feature_sets(apache_train, synthetic)
     classifier = fit_source_balanced(training)
-    save_classifier(classifier, args.output)
+    save_classifier(classifier, args.output, tuning["threshold"])
     metrics = {
         "training_rows_by_source": pd.Series(training.sources).value_counts().to_dict(),
-        "apache_test": asdict(
-            score_predictions(apache_test.labels, list(classifier.predict(apache_test.features)))
-        ),
-        "vietnamese_tasks": {
-            domain: asdict(scores)
-            for domain, scores in score_on_vietnamese_tasks(classifier).items()
-        },
+        "confidence_threshold_tuning": tuning,
+        "with_threshold": evaluate(classifier, apache_test, tuning["threshold"]),
+        "without_threshold": evaluate(classifier, apache_test, 0.0),
     }
     METRICS_PATH.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     logger.info("Saved model to %s; metrics: %s", args.output, json.dumps(metrics))
