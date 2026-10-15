@@ -3,15 +3,31 @@ from collections.abc import Sequence
 from sqlmodel import Session, col, select
 
 from flowagent.clock import now_local
-from flowagent.db.models import Project, Task, TaskStatus
-from flowagent.db.schemas import TaskCreate, TaskFilter, TaskUpdate
+from flowagent.db.models import (
+    MINUTES_PER_DAY,
+    MemoryNote,
+    Priority,
+    Project,
+    ScheduleEvent,
+    Task,
+    TaskStatus,
+)
+from flowagent.db.schemas import (
+    ScheduleEventCreate,
+    ScheduleEventUpdate,
+    TaskCreate,
+    TaskFilter,
+    TaskUpdate,
+)
 from flowagent.errors import (
+    EventNotFoundError,
     InvalidScheduleError,
+    MemoryNotFoundError,
     ProjectExistsError,
     ProjectNotFoundError,
     TaskNotFoundError,
 )
-from flowagent.vietnamese import contains_all_words
+from flowagent.vietnamese import contains_all_words, fold_text
 
 
 def ensure_start_before_deadline(task: Task) -> None:
@@ -106,3 +122,100 @@ def get_project_by_name(session: Session, name: str) -> Project:
 def list_projects(session: Session) -> Sequence[Project]:
     """Return all projects, newest first."""
     return session.exec(select(Project).order_by(col(Project.created_at).desc())).all()
+
+
+def create_event(session: Session, event_in: ScheduleEventCreate) -> ScheduleEvent:
+    """Insert a calendar event and return it with its generated id."""
+    event = ScheduleEvent.model_validate(event_in)
+    session.add(event)
+    session.flush()
+    session.refresh(event)
+    return event
+
+
+def get_event(session: Session, event_id: int) -> ScheduleEvent:
+    """Return the calendar event with the given id or raise EventNotFoundError."""
+    event = session.get(ScheduleEvent, event_id)
+    if event is None:
+        raise EventNotFoundError(f"Không tìm thấy lịch trình có id={event_id}.")
+    return event
+
+
+def list_events(session: Session) -> Sequence[ScheduleEvent]:
+    """Return every calendar event ordered by its first start time."""
+    return session.exec(select(ScheduleEvent).order_by(col(ScheduleEvent.start_at))).all()
+
+
+def replace_event(session: Session, event_id: int, event_in: ScheduleEventCreate) -> ScheduleEvent:
+    """Overwrite all editable fields of an event, as the editor dialog saves the whole form."""
+    event = get_event(session, event_id)
+    event.sqlmodel_update(event_in.model_dump())
+    event.created_at = now_local()
+    session.add(event)
+    session.flush()
+    session.refresh(event)
+    return event
+
+
+def update_event(session: Session, event_id: int, changes: ScheduleEventUpdate) -> ScheduleEvent:
+    """Apply only the provided fields to an event; all-day events span the whole start date."""
+    event = get_event(session, event_id)
+    event.sqlmodel_update(changes.model_dump(exclude_unset=True))
+    if event.all_day:
+        event.start_at = event.start_at.replace(hour=0, minute=0)
+        event.duration_minutes = MINUTES_PER_DAY
+    event.created_at = now_local()
+    session.add(event)
+    session.flush()
+    session.refresh(event)
+    return event
+
+
+def find_events(session: Session, keyword: str | None = None) -> list[ScheduleEvent]:
+    """Return events whose title or note contains every keyword word, ignoring accents."""
+    events = list_events(session)
+    if not keyword:
+        return list(events)
+    return [event for event in events if contains_all_words(f"{event.title} {event.note}", keyword)]
+
+
+def change_event_priority(session: Session, event_id: int, priority: Priority) -> ScheduleEvent:
+    """Set a new priority on an event."""
+    event = get_event(session, event_id)
+    event.priority = priority
+    session.add(event)
+    session.flush()
+    return event
+
+
+def delete_event(session: Session, event_id: int) -> None:
+    """Delete a calendar event."""
+    session.delete(get_event(session, event_id))
+    session.flush()
+
+
+def add_memory(session: Session, content: str) -> MemoryNote:
+    """Store a long-term fact about the user, reusing an existing note with the same text."""
+    text = content.strip()
+    for note in list_memories(session):
+        if fold_text(note.content) == fold_text(text):
+            return note
+    note = MemoryNote.model_validate({"content": text})
+    session.add(note)
+    session.flush()
+    session.refresh(note)
+    return note
+
+
+def list_memories(session: Session) -> Sequence[MemoryNote]:
+    """Return every remembered fact, oldest first."""
+    return session.exec(select(MemoryNote).order_by(col(MemoryNote.id))).all()
+
+
+def delete_memory(session: Session, memory_id: int) -> None:
+    """Forget one remembered fact or raise MemoryNotFoundError."""
+    note = session.get(MemoryNote, memory_id)
+    if note is None:
+        raise MemoryNotFoundError(f"Không tìm thấy ghi nhớ có id={memory_id}.")
+    session.delete(note)
+    session.flush()
