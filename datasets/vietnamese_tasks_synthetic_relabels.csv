@@ -1,0 +1,49 @@
+text,domain,old_label,new_label,reason
+Lập kế hoạch ôn tập nhẹ nhàng cho kỳ thi cuối kỳ sắp tới,personal,low,medium,"Nghĩa vụ/thủ tục hoặc việc học có hạn, không nên để low → medium"
+Tìm hiểu thủ tục đăng ký tạm trú mới cho căn hộ đang ở,personal,low,medium,"Nghĩa vụ/thủ tục hoặc việc học có hạn, không nên để low → medium"
+Gửi email kết nối với một vài người bạn trong cùng ngành nghề,personal,medium,low,"Việc tuỳ ý, giải trí hoặc trang trí, ảnh hưởng nhỏ → low"
+Mua thêm vài chậu cây nhỏ đặt ở ban công cho thoáng mát,personal,medium,low,"Việc tuỳ ý, giải trí hoặc trang trí, ảnh hưởng nhỏ → low"
+Tìm kiếm vài mẫu trang trí mới để làm mới không gian phòng khách,personal,medium,low,"Việc tuỳ ý, giải trí hoặc trang trí, ảnh hưởng nhỏ → low"
+Ghi chú lại các loại gia vị đã hết để bổ sung vào bếp,personal,medium,low,"Việc tuỳ ý, giải trí hoặc trang trí, ảnh hưởng nhỏ → low"
+Đọc xong chương cuối cuốn tiểu thuyết trinh thám đang dang dở,personal,medium,low,"Việc tuỳ ý, giải trí hoặc trang trí, ảnh hưởng nhỏ → low"
+Lên danh sách các bài hát mới cho playlist thư giãn buổi tối,personal,medium,low,"Việc tuỳ ý, giải trí hoặc trang trí, ảnh hưởng nhỏ → low"
+Sắp xếp lại kệ sách cho gọn gàng và dễ tìm kiếm hơn,personal,medium,low,"Việc tuỳ ý, giải trí hoặc trang trí, ảnh hưởng nhỏ → low"
+Đăng ký gói tập gym mới để duy trì thói quen vận động,personal,high,medium,"Việc thường ngày, không có hạn gấp → medium"
+Thay lõi lọc nước để đảm bảo sức khỏe cho cả gia đình,personal,high,medium,"Việc thường ngày, không có hạn gấp → medium"
+Giặt sạch đống quần áo tồn đọng để có đồ mặc đi làm,personal,high,medium,"Việc thường ngày, không có hạn gấp → medium"
+Dọn dẹp lại tủ lạnh để loại bỏ hết đồ ăn đã hỏng,personal,high,medium,"Việc thường ngày, không có hạn gấp → medium"
+Viết xong bài đánh giá phim cho chuyên mục giải trí trên trang blog cá nhân,personal,high,low,"Việc tuỳ ý, giải trí hoặc trang trí, ảnh hưởng nhỏ → low"
+Đan xong chiếc khăn len để kịp sử dụng trong chuyến đi dã ngoại sắp tới,personal,high,medium,"Việc thường ngày, không có hạn gấp → medium"
+Hoàn tất tờ khai thuế thu nhập cá nhân để tránh bị phạt quá hạn,personal,urgent,high,Quan trọng nhưng không cần xử lý trong vài giờ → high
+Rà soát các thư viện cũ trong dự án để tìm kiếm lỗ hổng bảo mật tiềm ẩn,software,low,medium,"Rà soát bảo mật/hiệu năng có ảnh hưởng thật, không phải tuỳ ý → medium"
+Chỉnh sửa lại thông báo lỗi để tránh làm lộ cấu trúc thư mục của hệ thống,software,low,medium,"Rà soát bảo mật/hiệu năng có ảnh hưởng thật, không phải tuỳ ý → medium"
+Xem xét lại các quyền truy cập của tài khoản dịch vụ trên hệ thống quản lý,software,low,medium,"Rà soát bảo mật/hiệu năng có ảnh hưởng thật, không phải tuỳ ý → medium"
+Tìm hiểu cách cải thiện tốc độ tải trang cho người dùng,software,low,medium,"Rà soát bảo mật/hiệu năng có ảnh hưởng thật, không phải tuỳ ý → medium"
+Dọn dẹp các tệp tin tạm dư thừa trên máy chủ ứng dụng,software,medium,low,Chỉnh sửa trình bày rất nhỏ hoặc quy ước nội bộ → low
+Thay đổi các khóa truy cập API đã được sử dụng quá thời hạn quy định,software,medium,high,Quan trọng nhưng không cần xử lý trong vài giờ → high
+Thêm chú thích chi tiết vào các hàm xử lý logic tính toán phí vận chuyển,software,medium,low,Chỉnh sửa trình bày rất nhỏ hoặc quy ước nội bộ → low
+Thêm hiệu ứng chuyển động nhẹ khi người dùng di chuột vào thẻ,software,medium,low,Chỉnh sửa trình bày rất nhỏ hoặc quy ước nội bộ → low
+Soạn thảo quy định đặt tên biến để thống nhất phong cách viết code,software,medium,low,Chỉnh sửa trình bày rất nhỏ hoặc quy ước nội bộ → low
+Khắc phục lỗi kết nối cơ sở dữ liệu đang làm gián đoạn dịch vụ khách hàng,software,high,urgent,"Sự cố đang làm gián đoạn dịch vụ, mất dữ liệu hoặc lỗ hổng bảo mật → urgent"
+Xử lý tình trạng quá tải bộ nhớ khiến máy chủ ứng dụng liên tục bị treo,software,high,urgent,"Sự cố đang làm gián đoạn dịch vụ, mất dữ liệu hoặc lỗ hổng bảo mật → urgent"
+Kiểm tra và khôi phục lại các bản ghi bị mất sau sự cố sập hệ thống,software,high,urgent,"Sự cố đang làm gián đoạn dịch vụ, mất dữ liệu hoặc lỗ hổng bảo mật → urgent"
+Giải quyết xung đột phiên đăng nhập đang gây lỗi xác thực cho toàn bộ hệ thống,software,high,urgent,"Sự cố đang làm gián đoạn dịch vụ, mất dữ liệu hoặc lỗ hổng bảo mật → urgent"
+Cập nhật các thư viện phụ thuộc để vá lỗi bảo mật nghiêm trọng hiện tại,software,high,urgent,"Sự cố đang làm gián đoạn dịch vụ, mất dữ liệu hoặc lỗ hổng bảo mật → urgent"
+Thiết lập lại cấu hình tường lửa nhằm ngăn chặn các truy cập trái phép lạ,software,high,urgent,"Sự cố đang làm gián đoạn dịch vụ, mất dữ liệu hoặc lỗ hổng bảo mật → urgent"
+Xử lý các cảnh báo tấn công từ hệ thống giám sát trong đêm qua,software,high,urgent,"Sự cố đang làm gián đoạn dịch vụ, mất dữ liệu hoặc lỗ hổng bảo mật → urgent"
+Tối ưu hóa truy vấn cơ sở dữ liệu cho trang lịch sử mua hàng,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Khóa lỗ hổng bảo mật trong quy trình xác thực mã giảm giá đơn,software,high,urgent,"Sự cố đang làm gián đoạn dịch vụ, mất dữ liệu hoặc lỗ hổng bảo mật → urgent"
+Khắc phục lỗi hiển thị nút bấm bị lệch trên trình duyệt di động,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Cập nhật lại font chữ toàn hệ thống theo bộ nhận diện thương hiệu mới,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Xử lý tình trạng chữ bị tràn khung trong bảng danh sách sản phẩm,software,high,low,Chỉnh sửa trình bày rất nhỏ hoặc quy ước nội bộ → low
+Thiết kế lại thanh điều hướng để khách hàng tìm kiếm thông tin nhanh chóng,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Điều chỉnh khoảng cách các thành phần trong form đăng ký cho cân đối,software,high,low,Chỉnh sửa trình bày rất nhỏ hoặc quy ước nội bộ → low
+Kiểm tra và tinh chỉnh lại các hàm xử lý logic gây chậm giao diện người dùng,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Viết bổ sung bộ kiểm thử tự động cho luồng đăng nhập người dùng mới,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Kiểm tra tính tương thích của giao diện trên các trình duyệt phổ biến hiện nay,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Phối hợp với đội ngũ phát triển để tái hiện và sửa lỗi hiển thị trên di động,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Chuẩn hóa quy tắc đặt tên biến và cấu trúc thư mục trong tài liệu kỹ thuật chung,software,high,low,Chỉnh sửa trình bày rất nhỏ hoặc quy ước nội bộ → low
+Tổng hợp các thay đổi trong phiên bản mới vào tài liệu ghi chú phát hành sản phẩm,software,high,medium,"Lỗi/chỉnh sửa giao diện nhỏ, không chặn người dùng → medium"
+Sửa lỗi tính toán sai lệch số dư tài khoản trong báo cáo tài chính tháng,software,urgent,high,Quan trọng nhưng không cần xử lý trong vài giờ → high
+Điều chỉnh quy trình kiểm thử để loại bỏ lỗi gây treo ứng dụng trên diện rộng,software,urgent,high,Quan trọng nhưng không cần xử lý trong vài giờ → high
+Hoàn thiện tài liệu xử lý sự cố để đội ngũ kỹ thuật khắc phục lỗi mất tiền,software,urgent,high,Quan trọng nhưng không cần xử lý trong vài giờ → high
