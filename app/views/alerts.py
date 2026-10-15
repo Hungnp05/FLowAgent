@@ -23,6 +23,6 @@ def render_schedule_alerts() -> None:
     risks = find_at_risk_tasks(open_tasks, now)
     if not conflicts and not risks:
         return
-    label = f"⚠️ Cần chú ý: {len(conflicts)} lịch trùng giờ · {len(risks)} việc trễ hoặc sắp trễ"
-    with st.expander(label):
+    label = f"Cần chú ý: {len(conflicts)} lịch trùng giờ · {len(risks)} việc trễ hoặc sắp trễ"
+    with st.expander(label, icon=":material/warning:"):
         st.markdown(format_schedule_alerts(conflicts, risks))

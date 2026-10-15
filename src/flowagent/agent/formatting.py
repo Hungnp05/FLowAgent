@@ -125,7 +125,9 @@ def format_conflict_note(conflicts: Sequence[Conflict]) -> str:
     """Append a warning about clashes to a create or update confirmation, if there are any."""
     if not conflicts:
         return ""
-    return "\n⚠️ Trùng giờ:\n" + "\n".join(format_conflict(conflict) for conflict in conflicts)
+    return "\nTrùng giờ (cần xem lại):\n" + "\n".join(
+        format_conflict(conflict) for conflict in conflicts
+    )
 
 
 def format_reschedule(changes: Sequence[tuple[Task, TimeSlot]]) -> str:
@@ -145,8 +147,9 @@ def format_deadline_fit(plan: TimelinePlan, finish_by: datetime | None) -> str:
     hours_per_day = plan.daily_work_minutes / MINUTES_PER_HOUR
     if not plan.fits_deadline:
         return (
-            f"\n⚠️ Không kịp hạn {format_datetime(finish_by)}: dù làm {hours_per_day:g} giờ/ngày "
-            f"vẫn xong lúc {format_datetime(plan.slots[-1].end)}. Nên bớt bước hoặc lùi hạn."
+            f"\nCảnh báo: không kịp hạn {format_datetime(finish_by)}: "
+            f"dù làm {hours_per_day:g} giờ/ngày vẫn xong lúc "
+            f"{format_datetime(plan.slots[-1].end)}. Nên bớt bước hoặc lùi hạn."
         )
     return f"\nĐể kịp hạn {format_datetime(finish_by)}: làm {hours_per_day:g} giờ/ngày."
 

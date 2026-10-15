@@ -66,7 +66,7 @@ def entry_colors(key: str) -> tuple[str, str]:
 
 
 def time_label(occurrence: Occurrence) -> str:
-    """Render 'Cả ngày' or 'HH:MM–HH:MM' for an occurrence."""
+    """Render 'Cả ngày' or 'HH:MM-HH:MM' for an occurrence."""
     if occurrence.entry.all_day:
         return "Cả ngày"
     return f"{occurrence.start:%H:%M}{EN_DASH}{occurrence.end:%H:%M}"
@@ -85,7 +85,7 @@ def entry_html(occurrence: Occurrence) -> str:
 
 
 def priority_badge_html(priority: Priority) -> str:
-    """Render the colored priority badge used next to the − / + buttons."""
+    """Render the colored priority badge used next to the Giảm / Tăng buttons."""
     color = PRIORITY_COLORS[priority]
     return f'<span class="fa-badge" style="background:{color}">{PRIORITY_NAMES[priority]}</span>'
 

@@ -44,8 +44,9 @@ def render_share_buttons(markdown: str, period: ReportPeriod, now: datetime) -> 
     """Offer the report as a Markdown download and as a pre-filled email draft."""
     download_column, email_column = st.columns(2, vertical_alignment="bottom")
     download_column.download_button(
-        "⬇️ Tải báo cáo (.md)",
+        "Tải báo cáo (.md)",
         markdown,
+        icon=":material/download:",
         file_name=f"bao-cao-{period.value}-{now:%Y%m%d}.md",
         mime="text/markdown",
         width="stretch",
@@ -53,7 +54,10 @@ def render_share_buttons(markdown: str, period: ReportPeriod, now: datetime) -> 
     recipients = email_column.text_input("Gửi tới (email, cách nhau bởi dấu phẩy)")
     subject = f"Báo cáo tiến độ {PERIOD_LABELS[period].lower()} {now:%d/%m/%Y}"
     st.link_button(
-        "✉️ Soạn email báo cáo", build_mailto_link(recipients, subject, markdown), width="stretch"
+        "Soạn email báo cáo",
+        build_mailto_link(recipients, subject, markdown),
+        icon=":material/mail:",
+        width="stretch",
     )
     st.caption(
         "Nút này mở ứng dụng email của bạn với nội dung điền sẵn; FlowAgent không tự gửi thư."
@@ -85,15 +89,17 @@ def render_export_section() -> None:
     tasks = load_tasks()
     ics_column, csv_column = st.columns(2)
     ics_column.download_button(
-        "🗓️ Lịch (.ics) cho Google Calendar / Outlook",
+        "Lịch (.ics) cho Google Calendar / Outlook",
         build_ics(events, tasks, now_local(), get_settings().timezone).encode("utf-8"),
+        icon=":material/event:",
         file_name="flowagent.ics",
         mime="text/calendar",
         width="stretch",
     )
     csv_column.download_button(
-        "📄 Công việc (.csv) cho Excel / Sheets / Notion / Trello",
+        "Công việc (.csv) cho Excel / Sheets / Notion / Trello",
         build_tasks_csv(tasks, projects),
+        icon=":material/table_view:",
         file_name="flowagent-tasks.csv",
         mime="text/csv",
         width="stretch",
@@ -106,7 +112,7 @@ def render_export_section() -> None:
 
 def render_report_page() -> None:
     """Render the progress report and export page."""
-    st.title("📊 Báo cáo & Xuất dữ liệu")
+    st.title("Báo cáo & Xuất dữ liệu")
     render_report_section()
     st.divider()
     render_export_section()

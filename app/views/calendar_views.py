@@ -64,21 +64,29 @@ def render_week_strip(days: list[date], by_day: dict, today: date, open_day: Ope
 def render_entry_row(
     occurrence: Occurrence, row_key: str, open_entry: OpenEntry, change_priority: ChangePriority
 ) -> None:
-    """Draw one entry with an edit button and the − [priority] + stepper."""
+    """Draw one entry with an edit button and the Giảm [priority] Tăng stepper."""
     entry = occurrence.entry
     body, edit, lower, badge, raise_ = st.columns(
-        [7, 0.7, 0.7, 1.6, 0.7], vertical_alignment="center"
+        [7, 0.8, 0.8, 1.6, 0.8], vertical_alignment="center"
     )
     body.markdown(entry_html(occurrence), unsafe_allow_html=True)
-    if edit.button("✎", key=f"edit-{row_key}", help="Xem / sửa"):
+    if edit.button("", icon=":material/edit:", key=f"edit-{row_key}", help="Xem / sửa"):
         open_entry(entry)
     if lower.button(
-        "−", key=f"lower-{row_key}", help="Giảm ưu tiên", disabled=entry.priority == Priority.LOW
+        "",
+        icon=":material/remove:",
+        key=f"lower-{row_key}",
+        help="Giảm ưu tiên",
+        disabled=entry.priority == Priority.LOW,
     ):
         change_priority(entry, shift_priority(entry.priority, -1))
     badge.markdown(priority_badge_html(entry.priority), unsafe_allow_html=True)
     if raise_.button(
-        "+", key=f"raise-{row_key}", help="Tăng ưu tiên", disabled=entry.priority == Priority.URGENT
+        "",
+        icon=":material/add:",
+        key=f"raise-{row_key}",
+        help="Tăng ưu tiên",
+        disabled=entry.priority == Priority.URGENT,
     ):
         change_priority(entry, shift_priority(entry.priority, 1))
 
@@ -100,7 +108,13 @@ def render_week_day_card(
             f"<div class='fa-day-number' style='color:{color}'>{day.day}</div>",
             unsafe_allow_html=True,
         )
-        if date_column.button("Mở", key=f"open-{day}", type="tertiary", help="Mở lịch ngày"):
+        if date_column.button(
+            "Mở",
+            icon=":material/open_in_new:",
+            key=f"open-{day}",
+            type="tertiary",
+            help="Mở lịch ngày",
+        ):
             open_day(day)
         with entries_column:
             if not occurrences:
@@ -255,7 +269,7 @@ def render_day_view(
     hour = hour_column.selectbox(
         "Khung giờ", range(24), index=9, format_func=lambda h: f"{h:02d}:00"
     )
-    if button_column.button("➕ Thêm lịch lúc này", key="add-at-hour"):
+    if button_column.button("Thêm lịch lúc này", icon=":material/add:", key="add-at-hour"):
         add_at_hour(hour)
     st.markdown(f"**Lịch trong ngày — {FULL_WEEKDAYS[day.weekday()]}**")
     if not occurrences:
@@ -263,5 +277,5 @@ def render_day_view(
     for index, occurrence in enumerate(occurrences):
         body, edit = st.columns([9, 1], vertical_alignment="center")
         body.markdown(entry_html(occurrence), unsafe_allow_html=True)
-        if edit.button("✎", key=f"day-edit-{index}", help="Xem / sửa"):
+        if edit.button("", icon=":material/edit:", key=f"day-edit-{index}", help="Xem / sửa"):
             open_entry(occurrence.entry)

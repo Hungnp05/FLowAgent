@@ -85,7 +85,7 @@ def load_calendar_entries() -> list[CalendarEntry]:
 
 
 def change_entry_priority(entry: CalendarEntry, priority: Priority) -> None:
-    """Save a new priority on the underlying event or task, as the − / + buttons do."""
+    """Save a new priority on the underlying event or task, as the Giảm / Tăng buttons do."""
     with session_scope(get_engine()) as session:
         if entry.source == EntrySource.TASK:
             crud.update_task(session, entry.source_id, TaskUpdate(priority=priority))
@@ -218,14 +218,14 @@ def event_editor(event: ScheduleEvent | None, day: date, start: time) -> None:
     """Show the add/edit form with Lưu, Xóa and Hủy actions."""
     values = read_event_form(event, day, start)
     save_column, delete_column, cancel_column = st.columns(3)
-    if save_column.button("Lưu", type="primary", width="stretch"):
+    if save_column.button("Lưu", icon=":material/save:", type="primary", width="stretch"):
         save_event(event, values)
-    if event and delete_column.button("Xóa", width="stretch"):
+    if event and delete_column.button("Xóa", icon=":material/delete:", width="stretch"):
         with session_scope(get_engine()) as session:
             crud.delete_event(session, event.id)
         close_dialog()
         st.rerun()
-    if cancel_column.button("Hủy", width="stretch"):
+    if cancel_column.button("Hủy", icon=":material/close:", width="stretch"):
         close_dialog()
         st.rerun()
 
@@ -278,7 +278,9 @@ def task_details(task_id: int) -> None:
     if task.description:
         st.caption(task.description)
     st.caption("Sửa chi tiết ở trang Bảng công việc hoặc nhờ Trợ lý.")
-    if task.status != TaskStatus.DONE and st.button("Đánh dấu hoàn thành", type="primary"):
+    if task.status != TaskStatus.DONE and st.button(
+        "Đánh dấu hoàn thành", icon=":material/check_circle:", type="primary"
+    ):
         with session_scope(get_engine()) as session:
             crud.update_task(session, task_id, TaskUpdate(status=TaskStatus.DONE))
         close_dialog()
@@ -316,7 +318,7 @@ def render_header(mode: CalendarMode, anchor: date) -> None:
     """Draw the mode switch (or back button), Hôm nay, add button and the period navigator."""
     switch_column, today_column, add_column = st.columns([5, 1.2, 2], vertical_alignment="center")
     if mode == CalendarMode.DAY:
-        if switch_column.button("← Quay lại"):
+        if switch_column.button("Quay lại", icon=":material/arrow_back:"):
             close_day()
     else:
         selected = switch_column.segmented_control(
@@ -328,18 +330,22 @@ def render_header(mode: CalendarMode, anchor: date) -> None:
         )
         if selected and selected != mode:
             set_view(selected, anchor)
-    if today_column.button("Hôm nay", width="stretch"):
+    if today_column.button("Hôm nay", icon=":material/today:", width="stretch"):
         set_view(mode, now_local().date())
-    if add_column.button("➕ Thêm lịch trình", type="primary", width="stretch"):
+    if add_column.button("Thêm lịch trình", icon=":material/add:", type="primary", width="stretch"):
         open_event_editor(None, anchor)
     previous_column, label_column, next_column = st.columns([1, 8, 1], vertical_alignment="center")
-    if previous_column.button("‹", key="period-previous", width="stretch"):
+    if previous_column.button(
+        "", icon=":material/chevron_left:", key="period-previous", help="Trước", width="stretch"
+    ):
         set_view(mode, shift_anchor(mode, anchor, -1))
     label_column.markdown(
         f"<h4 style='text-align:center;margin:0'>{period_label(mode, anchor)}</h4>",
         unsafe_allow_html=True,
     )
-    if next_column.button("›", key="period-next", width="stretch"):
+    if next_column.button(
+        "", icon=":material/chevron_right:", key="period-next", help="Sau", width="stretch"
+    ):
         set_view(mode, shift_anchor(mode, anchor, 1))
 
 
@@ -352,12 +358,14 @@ def render_reminders(entries: list[CalendarEntry], now: datetime) -> None:
             f"({time_label(occurrence)}, nhắc lúc {reminder_time(occurrence):%H:%M})"
             for occurrence in upcoming
         ]
-        st.info("🔔 **Sắp tới trong 24 giờ**  \n" + "  \n".join(lines))
+        st.info(
+            "**Sắp tới trong 24 giờ**  \n" + "  \n".join(lines), icon=":material/notifications:"
+        )
 
 
 def render_calendar_page() -> None:
     """Render the schedule page with week, month, year and day views like MobiAssistant."""
-    st.title("🗓️ Lịch trình")
+    st.title("Lịch trình")
     inject_calendar_css()
     init_calendar_state()
     mode, anchor, now = st.session_state[MODE_KEY], st.session_state[ANCHOR_KEY], now_local()

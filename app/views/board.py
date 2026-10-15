@@ -33,11 +33,15 @@ def render_deadline_banner(tasks: list[Task]) -> None:
     overdue = [task for task in open_tasks if task.deadline < now]
     due_soon = [task for task in open_tasks if now <= task.deadline <= now + DUE_SOON_WINDOW]
     if overdue:
-        st.error(f"⏰ {len(overdue)} việc quá hạn: " + ", ".join(task.title for task in overdue))
+        st.error(
+            f"{len(overdue)} việc quá hạn: " + ", ".join(task.title for task in overdue),
+            icon=":material/alarm:",
+        )
     if due_soon:
         st.warning(
-            f"🔔 {len(due_soon)} việc đến hạn trong 24 giờ: "
-            + ", ".join(task.title for task in due_soon)
+            f"{len(due_soon)} việc đến hạn trong 24 giờ: "
+            + ", ".join(task.title for task in due_soon),
+            icon=":material/notifications:",
         )
 
 
@@ -65,7 +69,7 @@ def render_add_task_form() -> None:
         planned_start = render_optional_datetime_input("Có ngày bắt đầu", WORKDAY_START, "start")
         deadline = render_optional_datetime_input("Có hạn chót", DEFAULT_DEADLINE_TIME, "deadline")
         estimated_minutes = st.number_input("Thời lượng (phút)", min_value=0, value=60, step=15)
-        if not st.form_submit_button("Thêm") or not title.strip():
+        if not st.form_submit_button("Thêm", icon=":material/add:") or not title.strip():
             return
         task_in = TaskCreate(
             title=title.strip(),
@@ -93,20 +97,52 @@ def format_schedule(task: Task) -> str:
 
 def render_priority_controls(task: Task) -> None:
     """Show the task's priority with buttons to raise or lower it by one level."""
-    label_column, raise_column, lower_column = st.columns([3, 1, 1], vertical_alignment="center")
+    label_column, raise_column, lower_column = st.columns([2, 1, 1], vertical_alignment="center")
     label_column.caption(PRIORITY_LABELS[task.priority])
     raised = shift_priority(task.priority, 1)
     lowered = shift_priority(task.priority, -1)
     if raise_column.button(
-        "▲", key=f"raise-{task.id}", help="Tăng độ ưu tiên", disabled=raised == task.priority
+        "",
+        icon=":material/arrow_upward:",
+        key=f"raise-{task.id}",
+        help="Tăng độ ưu tiên",
+        disabled=raised == task.priority,
     ):
         change_task_priority(task.id, raised)
         st.rerun()
     if lower_column.button(
-        "▼", key=f"lower-{task.id}", help="Giảm độ ưu tiên", disabled=lowered == task.priority
+        "",
+        icon=":material/arrow_downward:",
+        key=f"lower-{task.id}",
+        help="Giảm độ ưu tiên",
+        disabled=lowered == task.priority,
     ):
         change_task_priority(task.id, lowered)
         st.rerun()
+
+
+def render_move_buttons(task: Task) -> None:
+    """Show buttons named after the neighbouring columns to move the task back or forward."""
+    position = STATUS_ORDER.index(task.status)
+    back_column, next_column = st.columns(2)
+    if position > 0:
+        previous_status = STATUS_ORDER[position - 1]
+        if back_column.button(
+            f"Về {STATUS_LABELS[previous_status]}",
+            icon=":material/arrow_back:",
+            key=f"back-{task.id}",
+        ):
+            change_task_status(task.id, previous_status)
+            st.rerun()
+    if position < len(STATUS_ORDER) - 1:
+        next_status = STATUS_ORDER[position + 1]
+        if next_column.button(
+            f"Sang {STATUS_LABELS[next_status]}",
+            icon=":material/arrow_forward:",
+            key=f"next-{task.id}",
+        ):
+            change_task_status(task.id, next_status)
+            st.rerun()
 
 
 def render_task_card(task: Task) -> None:
@@ -115,19 +151,12 @@ def render_task_card(task: Task) -> None:
         st.markdown(f"**{task.title}**")
         render_priority_controls(task)
         st.caption(format_schedule(task))
-        position = STATUS_ORDER.index(task.status)
-        back_column, next_column = st.columns(2)
-        if position > 0 and back_column.button("◀", key=f"back-{task.id}"):
-            change_task_status(task.id, STATUS_ORDER[position - 1])
-            st.rerun()
-        if position < len(STATUS_ORDER) - 1 and next_column.button("▶", key=f"next-{task.id}"):
-            change_task_status(task.id, STATUS_ORDER[position + 1])
-            st.rerun()
+        render_move_buttons(task)
 
 
 def render_board_page() -> None:
     """Render the Kanban board with a deadline banner and a manual add form."""
-    st.title("📋 Bảng công việc")
+    st.title("Bảng công việc")
     tasks = load_tasks()
     render_deadline_banner(tasks)
     render_schedule_alerts()

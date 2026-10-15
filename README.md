@@ -50,7 +50,7 @@ Trình duyệt sẽ mở `http://localhost:8501`. Nhấn **Ctrl+C** trong termin
 
 ## Thiết lập lần đầu
 
-1. Mở trang **🔑 Cài đặt API** ở thanh bên.
+1. Mở trang **Cài đặt API** ở thanh bên.
 2. **Tạo mã PIN** (4 đến 8 chữ số). Những lần sau phải nhập PIN mới vào được trang này.
 3. Nhập **Gemini API key** và/hoặc **Groq API key**, bấm **Lưu cài đặt**. Nút con mắt trong ô nhập dùng để ẩn/hiện key.
 4. Bấm **Kiểm tra kết nối** để thử từng model trong thứ tự dự phòng.
@@ -61,7 +61,7 @@ Thay vì nhập trên trang, bạn có thể điền key vào file `.env`. Key n
 
 ## Hướng dẫn sử dụng
 
-### 💬 Trợ lý
+### Trợ lý
 
 Ra lệnh bằng tiếng Việt tự nhiên:
 
@@ -84,23 +84,23 @@ Ra lệnh bằng tiếng Việt tự nhiên:
 - Chỉ nói ngày mà không nói giờ: hạn chót tính đến **23:59**, ngày bắt đầu tính từ **09:00**.
 - Độ ưu tiên: "gấp" là khẩn cấp, "quan trọng" là cao, "thấp" là thấp, còn lại là trung bình.
 - Dòng "Trả lời bởi …" dưới mỗi câu trả lời cho biết model nào đã xử lý.
-- Cuộc trò chuyện được lưu trong `data/chat_history.db`; nút **🆕 Cuộc trò chuyện mới** ở thanh bên bắt đầu lại từ đầu.
-- Mục **🧠 Trí nhớ dài hạn** ở thanh bên liệt kê những điều trợ lý đã ghi nhớ; bấm ✕ để xoá, hoặc tự thêm.
+- Cuộc trò chuyện được lưu trong `data/chat_history.db`; nút **Cuộc trò chuyện mới** ở thanh bên bắt đầu lại từ đầu.
+- Mục **Trí nhớ dài hạn** ở thanh bên liệt kê những điều trợ lý đã ghi nhớ; bấm nút thùng rác để quên một điều, hoặc tự thêm.
 
-### 📋 Bảng công việc
+### Bảng công việc
 
-- Ba cột **Cần làm**, **Đang làm**, **Hoàn thành**. Bấm ◀ hoặc ▶ để chuyển việc giữa các cột.
+- Ba cột **Cần làm**, **Đang làm**, **Hoàn thành**. Bấm **Về …** hoặc **Sang …** để chuyển việc giữa các cột, nút mũi tên lên / xuống để tăng hoặc giảm độ ưu tiên.
 - Banner đỏ báo việc quá hạn, banner vàng báo việc đến hạn trong 24 giờ.
 - **Thêm công việc** để nhập tay, chọn được ngày giờ bắt đầu, hạn chót và thời lượng. Ngày bắt đầu phải trước hoặc bằng hạn chót.
 
-### 📊 Báo cáo & Xuất
+### Báo cáo & Xuất
 
 - Báo cáo **Hôm nay** / **Tuần này**: việc đã xong (đúng hạn hay không), đang làm, trễ hạn, sắp đến hạn.
 - **Tải báo cáo (.md)** hoặc **Soạn email báo cáo**: mở ứng dụng email với nội dung điền sẵn (app không tự gửi thư).
 - **Lịch (.ics)**: nhập vào Google Calendar (Cài đặt → Nhập và xuất) hoặc Outlook (Thêm lịch → Tải lên từ tệp); giữ nguyên lịch lặp và nhắc nhở.
 - **Công việc (.csv)**: mở bằng Excel, Google Sheets hoặc nhập vào Notion/Trello.
 
-### 📅 Gantt
+### Gantt
 
 - Chọn **Tất cả công việc** hoặc một dự án.
 - Chỉ việc có **ngày bắt đầu** mới hiện trên biểu đồ. Việc tạo bằng lệnh lập kế hoạch dự án luôn có sẵn ngày bắt đầu.

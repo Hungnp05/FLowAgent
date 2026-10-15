@@ -28,11 +28,11 @@ MAX_OCCURRENCE_ITERATIONS = 100_000
 DAYS_PER_WEEK = 7
 MONTH_GRID_DAYS = 42
 MONTHS_PER_YEAR = 12
-DONE_MARK = "✓ "
+DONE_PREFIX = "[Xong] "
 EN_DASH = chr(0x2013)
 PERIOD_SEPARATOR = f" {EN_DASH} "
-WORK_ICON = "📌"
-DEADLINE_ICON = "⏰"
+WORK_PREFIX = "Làm: "
+DEADLINE_PREFIX = "Hạn: "
 SHORT_WEEKDAYS = ("T2", "T3", "T4", "T5", "T6", "T7", "CN")
 FULL_WEEKDAYS = ("Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật")
 LONGEST_PERIOD = {
@@ -206,7 +206,7 @@ def deadline_entry(task: Task, mark: str) -> CalendarEntry | None:
         key=f"{TASK_KEY_PREFIX}{task.id}{DEADLINE_KEY_SUFFIX}",
         source=EntrySource.TASK,
         source_id=task.id or 0,
-        title=f"{mark}{DEADLINE_ICON} Hạn: {task.title}",
+        title=f"{mark}{DEADLINE_PREFIX}{task.title}",
         start=datetime.combine(deadline.date(), time.min) if is_date_only else deadline,
         duration_minutes=MINUTES_PER_DAY if is_date_only else DEADLINE_MARKER_MINUTES,
         all_day=is_date_only,
@@ -216,7 +216,7 @@ def deadline_entry(task: Task, mark: str) -> CalendarEntry | None:
 
 def task_to_entries(task: Task) -> list[CalendarEntry]:
     """Show a task on the calendar as a work block from its start and a deadline marker."""
-    mark = DONE_MARK if task.status == TaskStatus.DONE else ""
+    mark = DONE_PREFIX if task.status == TaskStatus.DONE else ""
     entries = []
     if task.planned_start:
         entries.append(
@@ -224,7 +224,7 @@ def task_to_entries(task: Task) -> list[CalendarEntry]:
                 key=work_entry_key(task.id or 0),
                 source=EntrySource.TASK,
                 source_id=task.id or 0,
-                title=f"{mark}{WORK_ICON} {task.title}",
+                title=f"{mark}{WORK_PREFIX}{task.title}",
                 start=task.planned_start,
                 duration_minutes=work_block_minutes(task),
                 priority=task.priority,

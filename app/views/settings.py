@@ -49,7 +49,7 @@ def render_unlock_form() -> None:
     """Ask for the PIN before showing stored API keys."""
     with st.form("unlock"):
         pin = pin_input("Nhập mã PIN để mở trang cài đặt", "unlock-pin")
-        is_submitted = st.form_submit_button("Mở khoá", type="primary")
+        is_submitted = st.form_submit_button("Mở khoá", icon=":material/lock_open:", type="primary")
     if not is_submitted:
         return
     with session_scope(get_engine()) as session:
@@ -91,7 +91,7 @@ def render_api_key_form(config: LlmConfig) -> None:
             "Groq API key", saved_groq_key, type="password", placeholder=ENV_KEY_PLACEHOLDER
         )
         groq_model = st.text_input("Model Groq", config.groq_model)
-        is_submitted = st.form_submit_button("Lưu cài đặt", type="primary")
+        is_submitted = st.form_submit_button("Lưu cài đặt", icon=":material/save:", type="primary")
     if not is_submitted:
         return
     new_config = LlmConfig(
@@ -165,7 +165,7 @@ def render_unlocked_settings() -> None:
 
 def render_settings_page() -> None:
     """Guard the API settings behind a PIN, creating one on first visit."""
-    st.title("🔑 Cài đặt API")
+    st.title("Cài đặt API")
     with session_scope(get_engine()) as session:
         is_pin_created = has_pin(session)
     if not is_pin_created:

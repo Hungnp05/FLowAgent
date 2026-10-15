@@ -29,10 +29,10 @@ STATUS_LABELS = {
     TaskStatus.DONE: "Hoàn thành",
 }
 PRIORITY_LABELS = {
-    Priority.LOW: "🟢 Thấp",
-    Priority.MEDIUM: "🟡 Trung bình",
-    Priority.HIGH: "🟠 Cao",
-    Priority.URGENT: "🔴 Khẩn cấp",
+    Priority.LOW: "Thấp",
+    Priority.MEDIUM: "Trung bình",
+    Priority.HIGH: "Cao",
+    Priority.URGENT: "Khẩn cấp",
 }
 STATUS_ORDER = list(STATUS_LABELS)
 

@@ -50,7 +50,7 @@ def select_project() -> Project | None:
 
 def render_gantt_page() -> None:
     """Render a Gantt chart for all scheduled tasks or for one selected project."""
-    st.title("📅 Biểu đồ Gantt")
+    st.title("Biểu đồ Gantt")
     project = select_project()
     task_filter = TaskFilter(project_id=project.id) if project else None
     if project and project.goal:

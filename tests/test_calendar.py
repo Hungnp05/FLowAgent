@@ -100,16 +100,16 @@ def test_task_with_start_and_date_only_deadline_gives_block_and_all_day_marker()
         estimated_minutes=90,
     )
     work, deadline = task_to_entries(task)
-    assert (work.title, work.duration_minutes) == ("📌 Báo cáo", 90)
+    assert (work.title, work.duration_minutes) == ("Làm: Báo cáo", 90)
     assert (deadline.all_day, deadline.start, deadline.title) == (
         True,
         datetime(2026, 10, 17),
-        "⏰ Hạn: Báo cáo",
+        "Hạn: Báo cáo",
     )
 
 
 def test_same_day_deadline_ends_the_work_block_and_done_tasks_are_marked() -> None:
-    """A deadline on the start day becomes the end of the block, and done tasks get a check mark."""
+    """A deadline on the start day becomes the end of the block, and done tasks are marked."""
     task = Task(
         id=8,
         title="Ôn tập",
@@ -119,7 +119,7 @@ def test_same_day_deadline_ends_the_work_block_and_done_tasks_are_marked() -> No
     )
     entries = task_to_entries(task)
     assert len(entries) == 1
-    assert (entries[0].title, entries[0].duration_minutes) == ("✓ 📌 Ôn tập", 180)
+    assert (entries[0].title, entries[0].duration_minutes) == ("[Xong] Làm: Ôn tập", 180)
 
 
 def test_reminders_use_offset_and_seven_am_for_all_day() -> None:
