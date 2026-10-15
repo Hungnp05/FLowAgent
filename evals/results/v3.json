@@ -1,0 +1,381 @@
+{
+  "label": "v3",
+  "model": "groq / openai/gpt-oss-120b",
+  "git_commit": "619f77b",
+  "prompt_sha": "a7d33c00e0bc",
+  "run_at": "2026-10-15T08:11:56",
+  "summary": {
+    "overall": {
+      "cases": 13,
+      "success_rate": 0.9230769230769231,
+      "tool_selection_accuracy": 0.9230769230769231,
+      "check_accuracy": 1.0,
+      "error_rate": 0.07692307692307693,
+      "mean_latency_seconds": 2.185,
+      "p95_latency_seconds": 3.3244999999999996,
+      "mean_model_calls": 2.0,
+      "mean_tokens": 3915.6923076923076
+    },
+    "by_category": {
+      "create": {
+        "cases": 13,
+        "success_rate": 0.9230769230769231,
+        "tool_selection_accuracy": 0.9230769230769231,
+        "check_accuracy": 1.0,
+        "error_rate": 0.07692307692307693,
+        "mean_latency_seconds": 2.185,
+        "p95_latency_seconds": 3.3244999999999996,
+        "mean_model_calls": 2.0,
+        "mean_tokens": 3915.6923076923076
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "create-01",
+      "category": "create",
+      "utterance": "Thêm việc nộp báo cáo vào thứ 6 tuần sau, ưu tiên cao",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 4,
+      "total_checks": 4,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "list_tasks",
+          "args": {
+            "keyword": "báo cáo"
+          }
+        },
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-23 23:59",
+            "planned_start": "2026-10-23 09:00",
+            "priority": "high",
+            "title": "Nộp báo cáo"
+          }
+        }
+      ],
+      "reply": "- Đã tạo việc **Nộp báo cáo** vào **thứ 6 tuần sau (2026‑10‑23)**, ưu tiên **cao (high)**, bắt đầu lúc 09:00 và hạn chót 23:59.  \n\nBạn có muốn thêm thời lượng ước tính hoặc chỉnh sửa gì khác không?",
+      "latency_seconds": 3.23,
+      "model_calls": 3,
+      "total_tokens": 5838,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-02",
+      "category": "create",
+      "utterance": "Nhắc tôi gọi điện cho mẹ lúc 8 giờ tối nay",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 3,
+      "total_checks": 3,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-14 20:00",
+            "description": "",
+            "estimated_minutes": null,
+            "planned_start": null,
+            "priority": null,
+            "project_name": null,
+            "title": "Gọi điện cho mẹ"
+          }
+        }
+      ],
+      "reply": "- ✅ **Gọi điện cho mẹ** – hạn chót: 2026‑10‑14 20:00  \n\nĐộ ưu tiên hiện tại là *low* (đây là gợi ý của hệ thống, bạn có thể thay đổi nếu muốn).",
+      "latency_seconds": 2.95,
+      "model_calls": 2,
+      "total_tokens": 3824,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-03",
+      "category": "create",
+      "utterance": "Thêm việc ôn thi toán, hạn ngày mai",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 3,
+      "total_checks": 3,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-15 23:59",
+            "title": "Ôn thi toán"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc **Ôn thi toán** với hạn chót **15/10/2026 23:59**.  \n\n- Ưu tiên hiện tại là gợi ý **low** (có thể thay đổi).  \n- Nếu muốn thêm thời gian ước tính hoặc thay đổi độ ưu tiên, chỉ cần cho mình biết nhé!",
+      "latency_seconds": 1.99,
+      "model_calls": 2,
+      "total_tokens": 3879,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-04",
+      "category": "create",
+      "utterance": "Tạo việc đóng tiền điện trước 20/10, gấp lắm",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 4,
+      "total_checks": 4,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-20 23:59",
+            "priority": "urgent",
+            "title": "đóng tiền điện"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc:\n\n- **đóng tiền điện** – ưu tiên **gấp/urgent**, hạn chót **2026‑10‑20 23:59** (chưa có thời gian ước lượng).\n\nBạn có thể cập nhật thời lượng dự kiến hoặc thay đổi ưu tiên bất cứ lúc nào. Nếu cần thêm việc nào khác, cứ cho mình biết nhé!",
+      "latency_seconds": 1.49,
+      "model_calls": 2,
+      "total_tokens": 3794,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-05",
+      "category": "create",
+      "utterance": "Thêm việc đọc sách 30 phút",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 3,
+      "total_checks": 3,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "estimated_minutes": 30,
+            "title": "Đọc sách"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc **Đọc sách** (30 phút).  \n- Ưu tiên: *low* (đề xuất của hệ thống)  \n- Trạng thái: *todo*  \n\nBạn có muốn đặt thời gian bắt đầu, hạn chót hoặc thay đổi độ ưu tiên không? Nếu không, công việc sẽ được lên lịch mặc định vào ngày hôm nay, bắt đầu lúc 09:00 và hết hạn lúc 23:59.",
+      "latency_seconds": 2.08,
+      "model_calls": 2,
+      "total_tokens": 3861,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-06",
+      "category": "create",
+      "utterance": "Họp nhóm đồ án lúc 3 giờ chiều mai",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 2,
+      "total_checks": 2,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-15 15:00",
+            "planned_start": "2026-10-15 15:00",
+            "title": "Họp nhóm đồ án"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc **Họp nhóm đồ án** vào lúc **15:00 ngày 15/10/2026**.  \n\n- Trạng thái: todo  \n- Thời gian bắt đầu & hạn chót: 15:00 – 15:00, 15/10/2026  \n- Ưu tiên: medium (đây là gợi ý của hệ thống, bạn có thể thay đổi nếu muốn).  \n\nNếu cần chỉnh sửa thời gian, độ ưu tiên hoặc thêm mô tả, cứ cho mình biết nhé!",
+      "latency_seconds": 1.63,
+      "model_calls": 2,
+      "total_tokens": 3878,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-07",
+      "category": "create",
+      "utterance": "Thêm việc nộp học phí trước cuối tháng",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 3,
+      "total_checks": 3,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-31 23:59",
+            "title": "Nộp học phí"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc **Nộp học phí** với hạn chót **31/10/2026 23:59**.  \nMô hình gợi ý mức ưu tiên **high** (có thể thay đổi nếu bạn muốn).  \n\nNếu cần chỉnh sửa thời gian, độ ưu tiên hoặc thêm mô tả, cứ cho mình biết nhé!",
+      "latency_seconds": 2.6,
+      "model_calls": 2,
+      "total_tokens": 3873,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-08",
+      "category": "create",
+      "utterance": "Thêm 2 việc: mua sữa ngày mai và sửa xe vào chủ nhật",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 5,
+      "total_checks": 5,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-15 23:59",
+            "planned_start": "2026-10-15 09:00",
+            "title": "Mua sữa"
+          }
+        },
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-18 23:59",
+            "planned_start": "2026-10-18 09:00",
+            "title": "Sửa xe"
+          }
+        }
+      ],
+      "reply": "✅ Đã thêm 2 việc mới:\n\n- **Mua sữa**  \n  - Thời gian bắt đầu: 2026‑10‑15 09:00  \n  - Hạn chót: 2026‑10‑15 23:59  \n  - Độ ưu tiên: *gợi ý high* (có thể thay đổi)\n\n- **Sửa xe**  \n  - Thời gian bắt đầu: 2026‑10‑18 09:00  \n  - Hạn chót: 2026‑10‑18 23:59  \n  - Độ ưu tiên: *gợi ý urgent* (có thể thay đổi)\n\nBạn có muốn chỉnh sửa thời gian, ước lượng thời gian thực hiện hoặc thay đổi độ ưu tiên cho bất kỳ việc nào không? 🌟",
+      "latency_seconds": 2.96,
+      "model_calls": 3,
+      "total_tokens": 6068,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-09",
+      "category": "create",
+      "utterance": "Làm bài tập lớn môn AI, hạn 3 ngày nữa, mất khoảng 4 tiếng",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 4,
+      "total_checks": 4,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-17 23:59",
+            "estimated_minutes": 240,
+            "title": "Làm bài tập lớn môn AI"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc **“Làm bài tập lớn môn AI”**:\n\n- **Hạn**: 2026‑10‑17 23:59  \n- **Thời lượng ước tính**: 4 giờ (240 phút)  \n- **Ưu tiên**: medium (đây là gợi ý của hệ thống, bạn có thể thay đổi bất kỳ lúc nào)\n\nNếu muốn chỉnh sửa thời gian, ưu tiên hoặc trạng thái, chỉ cần cho mình biết nhé! 🚀",
+      "latency_seconds": 1.96,
+      "model_calls": 2,
+      "total_tokens": 3912,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-10",
+      "category": "create",
+      "utterance": "Thêm việc quan trọng: chuẩn bị slide thuyết trình cho thứ 2 tuần sau",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 4,
+      "total_checks": 4,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-19 23:59",
+            "description": "Chuẩn bị slide thuyết trình cho thứ 2 tuần sau",
+            "planned_start": "2026-10-19 09:00",
+            "priority": "high",
+            "title": "Chuẩn bị slide thuyết trình"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc **“Chuẩn bị slide thuyết trình”**:\n\n- **Thời gian bắt đầu:** 2026‑10‑19 09:00  \n- **Hạn chót:** 2026‑10‑19 23:59  \n- **Ưu tiên:** **high** (đây là mức ưu tiên gợi ý, bạn có thể thay đổi bất kỳ lúc nào)\n\nNếu muốn chỉnh sửa thời gian, ước lượng thời gian hoặc mức ưu tiên, chỉ cần cho mình biết nhé!",
+      "latency_seconds": 1.89,
+      "model_calls": 2,
+      "total_tokens": 4004,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-11",
+      "category": "create",
+      "utterance": "Đi khám răng 9 giờ sáng thứ 5",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 2,
+      "total_checks": 2,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-15 09:00",
+            "planned_start": "2026-10-15 09:00",
+            "title": "Khám răng"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc:\n\n- **Khám răng**  \n  - Thời gian: 09:00 – 09:00, 15/10/2026 (thứ Năm)  \n  - Trạng thái: **todo**  \n  - Ưu tiên: **high** (đây là gợi ý của hệ thống, bạn có thể thay đổi nếu muốn)\n\nNếu cần chỉnh sửa thời gian, độ ưu tiên hoặc đánh dấu hoàn thành, cứ cho mình biết nhé!",
+      "latency_seconds": 1.78,
+      "model_calls": 2,
+      "total_tokens": 3917,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-12",
+      "category": "create",
+      "utterance": "Nhớ trả sách thư viện trong 1 tuần nữa",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 3,
+      "total_checks": 3,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "deadline": "2026-10-21 23:59",
+            "title": "Trả sách thư viện"
+          }
+        }
+      ],
+      "reply": "✅ Đã tạo công việc:\n\n- **Trả sách thư viện**  \n  - Hạn chót: **2026‑10‑21 23:59**  \n  - Ưu tiên: (được gợi ý tự động)  \n\nBạn có thể cập nhật thời gian bắt đầu, ước lượng thời gian hoặc thay đổi ưu tiên bất cứ lúc nào. Nếu cần thêm việc nào khác, cứ cho mình biết nhé!",
+      "latency_seconds": 1.66,
+      "model_calls": 2,
+      "total_tokens": 4056,
+      "model_name": "openai/gpt-oss-120b",
+      "error": null
+    },
+    {
+      "id": "create-13",
+      "category": "create",
+      "utterance": "Thêm việc cập nhật CV, ưu tiên thấp",
+      "success": false,
+      "tool_selection_ok": false,
+      "passed_checks": 0,
+      "total_checks": 0,
+      "failed_checks": [],
+      "tool_calls": [],
+      "reply": "",
+      "latency_seconds": 0.0,
+      "model_calls": 0,
+      "total_tokens": 0,
+      "model_name": null,
+      "error": "RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01m4wej38fecrrx5sgzm2jyfd4` service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 198238, Requested 2026. Please try again in 1m54.048s. Need more tokens? U"
+    }
+  ]
+}

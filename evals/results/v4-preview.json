@@ -1,0 +1,608 @@
+{
+  "label": "v4-preview",
+  "model": "gemini / gemini-3.1-flash-lite",
+  "git_commit": "619f77b",
+  "prompt_sha": "3caf798c7b56",
+  "run_at": "2026-10-15T18:53:25",
+  "summary": {
+    "overall": {
+      "cases": 14,
+      "success_rate": 1.0,
+      "tool_selection_accuracy": 1.0,
+      "check_accuracy": 1.0,
+      "error_rate": 0.0,
+      "mean_latency_seconds": 3.692857142857143,
+      "p95_latency_seconds": 6.4174999999999995,
+      "mean_model_calls": 2.642857142857143,
+      "mean_tokens": 10185.785714285714
+    },
+    "by_category": {
+      "alerts": {
+        "cases": 2,
+        "success_rate": 1.0,
+        "tool_selection_accuracy": 1.0,
+        "check_accuracy": 1.0,
+        "error_rate": 0.0,
+        "mean_latency_seconds": 2.5250000000000004,
+        "p95_latency_seconds": 2.7275,
+        "mean_model_calls": 2.0,
+        "mean_tokens": 7525.0
+      },
+      "memory": {
+        "cases": 2,
+        "success_rate": 1.0,
+        "tool_selection_accuracy": 1.0,
+        "check_accuracy": 1.0,
+        "error_rate": 0.0,
+        "mean_latency_seconds": 3.295,
+        "p95_latency_seconds": 6.116499999999999,
+        "mean_model_calls": 2.0,
+        "mean_tokens": 7509.5
+      },
+      "notes": {
+        "cases": 4,
+        "success_rate": 1.0,
+        "tool_selection_accuracy": 1.0,
+        "check_accuracy": 1.0,
+        "error_rate": 0.0,
+        "mean_latency_seconds": 4.3825,
+        "p95_latency_seconds": 7.642499999999998,
+        "mean_model_calls": 3.0,
+        "mean_tokens": 11728.0
+      },
+      "project": {
+        "cases": 1,
+        "success_rate": 1.0,
+        "tool_selection_accuracy": 1.0,
+        "check_accuracy": 1.0,
+        "error_rate": 0.0,
+        "mean_latency_seconds": 2.94,
+        "p95_latency_seconds": 2.94,
+        "mean_model_calls": 2.0,
+        "mean_tokens": 8193.0
+      },
+      "report": {
+        "cases": 2,
+        "success_rate": 1.0,
+        "tool_selection_accuracy": 1.0,
+        "check_accuracy": 1.0,
+        "error_rate": 0.0,
+        "mean_latency_seconds": 4.31,
+        "p95_latency_seconds": 8.009,
+        "mean_model_calls": 2.0,
+        "mean_tokens": 7825.0
+      },
+      "reschedule": {
+        "cases": 3,
+        "success_rate": 1.0,
+        "tool_selection_accuracy": 1.0,
+        "check_accuracy": 1.0,
+        "error_rate": 0.0,
+        "mean_latency_seconds": 3.6566666666666663,
+        "p95_latency_seconds": 7.068,
+        "mean_model_calls": 3.6666666666666665,
+        "mean_tokens": 13925.666666666666
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "notes-01",
+      "category": "notes",
+      "utterance": "Biên bản họp nhóm đồ án:\n- Quyết định: dùng Streamlit cho giao diện.\n- Lan chuẩn bị slide thuyết trình trước thứ 5 tuần sau.\n- Minh viết phần đánh giá trước thứ 2 tuần sau.\n- Cả nhóm chạy thử demo trước cuối tuần này.",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 7,
+      "total_checks": 7,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_tasks_from_notes",
+          "args": {
+            "meeting_title": "Họp nhóm đồ án",
+            "items": [
+              {
+                "deadline": "2026-10-22 23:59",
+                "owner": "Lan",
+                "title": "Chuẩn bị slide thuyết trình"
+              },
+              {
+                "owner": "Minh",
+                "title": "Viết phần đánh giá",
+                "deadline": "2026-10-19 23:59"
+              },
+              {
+                "title": "Chạy thử demo",
+                "deadline": "2026-10-18 23:59"
+              }
+            ]
+          }
+        },
+        {
+          "name": "create_tasks_from_notes",
+          "args": {
+            "meeting_title": "Họp nhóm đồ án",
+            "items": [
+              {
+                "deadline": "2026-10-22 23:59",
+                "owner": "Lan",
+                "title": "Chuẩn bị slide thuyết trình"
+              },
+              {
+                "owner": "Minh",
+                "title": "Viết phần đánh giá",
+                "deadline": "2026-10-19 23:59"
+              },
+              {
+                "title": "Chạy thử demo",
+                "deadline": "2026-10-18 23:59"
+              }
+            ]
+          }
+        }
+      ],
+      "reply": "Tôi đã ghi nhận các công việc từ biên bản họp nhóm đồ án:\n\n*   **Chuẩn bị slide thuyết trình** (Lan phụ trách): Hạn chót 2026-10-22 23:59.\n*   **Viết phần đánh giá** (Minh phụ trách): Hạn chót 2026-10-19 23:59.\n*   **Chạy thử demo** (Cả nhóm): Hạn chót 2026-10-18 23:59.\n\nQuyết định chính của cuộc họp là nhóm sẽ sử dụng **Streamlit** để xây dựng giao diện. Bạn có muốn tôi đặt lịch nhắc nhở hay ước tính thời gian cho các công việc này không?",
+      "latency_seconds": 6.27,
+      "model_calls": 3,
+      "total_tokens": 11918,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "notes-02",
+      "category": "notes",
+      "utterance": "Ghi chú cuộc họp với khách hàng sáng nay: anh Nam gửi lại hợp đồng đã ký trước 5 giờ chiều thứ 6 tuần này, việc này rất gấp; chị Hoa cập nhật bảng báo giá trước thứ 3 tuần sau. Tạo việc giúp tôi.",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 6,
+      "total_checks": 6,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_tasks_from_notes",
+          "args": {
+            "items": [
+              {
+                "owner": "anh Nam",
+                "deadline": "2026-10-16 17:00",
+                "title": "Gửi lại hợp đồng đã ký",
+                "priority": "urgent"
+              },
+              {
+                "deadline": "2026-10-20 23:59",
+                "title": "Cập nhật bảng báo giá",
+                "owner": "chị Hoa"
+              }
+            ],
+            "meeting_title": "Cuộc họp với khách hàng sáng nay"
+          }
+        },
+        {
+          "name": "create_tasks_from_notes",
+          "args": {
+            "items": [
+              {
+                "owner": "anh Nam",
+                "deadline": "2026-10-16 17:00",
+                "title": "Gửi lại hợp đồng đã ký",
+                "priority": "urgent"
+              },
+              {
+                "deadline": "2026-10-20 23:59",
+                "title": "Cập nhật bảng báo giá",
+                "owner": "chị Hoa"
+              }
+            ],
+            "meeting_title": "Cuộc họp với khách hàng sáng nay"
+          }
+        }
+      ],
+      "reply": "Tôi đã tạo các công việc từ biên bản cuộc họp sáng nay:\n\n*   **Gửi lại hợp đồng đã ký** (anh Nam phụ trách): Hạn chót là 17:00 thứ Sáu (2026-10-16), độ ưu tiên **Khẩn cấp**.\n*   **Cập nhật bảng báo giá** (chị Hoa phụ trách): Hạn chót là 23:59 thứ Ba tuần sau (2026-10-20).\n\nBạn có cần tôi hỗ trợ thêm gì cho các công việc này không?",
+      "latency_seconds": 2.84,
+      "model_calls": 3,
+      "total_tokens": 11756,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "notes-03",
+      "category": "notes",
+      "utterance": "Tóm tắt buổi họp phòng: 1) Kiểm tra lại số liệu doanh thu quý 3. 2) Liên hệ nhà cung cấp in ấn. 3) Lên danh sách khách mời hội thảo. Chưa ai chốt hạn. Chuyển thành việc cần làm cho tôi.",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 4,
+      "total_checks": 4,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_tasks_from_notes",
+          "args": {
+            "items": [
+              {
+                "title": "Kiểm tra lại số liệu doanh thu quý 3"
+              },
+              {
+                "title": "Liên hệ nhà cung cấp in ấn"
+              },
+              {
+                "title": "Lên danh sách khách mời hội thảo"
+              }
+            ],
+            "meeting_title": "Họp phòng"
+          }
+        },
+        {
+          "name": "create_tasks_from_notes",
+          "args": {
+            "items": [
+              {
+                "title": "Kiểm tra lại số liệu doanh thu quý 3"
+              },
+              {
+                "title": "Liên hệ nhà cung cấp in ấn"
+              },
+              {
+                "title": "Lên danh sách khách mời hội thảo"
+              }
+            ],
+            "meeting_title": "Họp phòng"
+          }
+        }
+      ],
+      "reply": "Tôi đã tạo các công việc từ biên bản cuộc họp phòng cho bạn:\n\n*   **Kiểm tra lại số liệu doanh thu quý 3**\n*   **Liên hệ nhà cung cấp in ấn**\n*   **Lên danh sách khách mời hội thảo**\n\nHiện tại các việc này chưa có hạn chót và độ ưu tiên đang được hệ thống gợi ý mặc định. Bạn có muốn cập nhật thêm thời hạn hoặc độ ưu tiên cho các công việc này không?",
+      "latency_seconds": 3.98,
+      "model_calls": 3,
+      "total_tokens": 11596,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "notes-04",
+      "category": "notes",
+      "utterance": "Trong cuộc họp sáng nay sếp giao tôi gửi báo giá cho khách trước thứ 4 tuần sau và cập nhật kế hoạch marketing trước thứ 6 tuần sau. Ghi lại thành việc giúp tôi.",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 5,
+      "total_checks": 5,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_tasks_from_notes",
+          "args": {
+            "items": [
+              {
+                "title": "Gửi báo giá cho khách",
+                "deadline": "2026-10-21 23:59"
+              },
+              {
+                "title": "Cập nhật kế hoạch marketing",
+                "deadline": "2026-10-23 23:59"
+              }
+            ],
+            "meeting_title": "Cuộc họp sáng nay"
+          }
+        },
+        {
+          "name": "create_tasks_from_notes",
+          "args": {
+            "items": [
+              {
+                "title": "Gửi báo giá cho khách",
+                "deadline": "2026-10-21 23:59"
+              },
+              {
+                "title": "Cập nhật kế hoạch marketing",
+                "deadline": "2026-10-23 23:59"
+              }
+            ],
+            "meeting_title": "Cuộc họp sáng nay"
+          }
+        }
+      ],
+      "reply": "Tôi đã ghi lại các công việc từ cuộc họp sáng nay cho bạn:\n\n*   **Gửi báo giá cho khách**: Hạn chót là 23:59 ngày 2026-10-21 (thứ 4 tuần sau).\n*   **Cập nhật kế hoạch marketing**: Hạn chót là 23:59 ngày 2026-10-23 (thứ 6 tuần sau).\n\nCả hai việc này hiện đang được đặt ở mức ưu tiên cao (urgent). Bạn có muốn ước tính thời gian thực hiện cho từng việc không?",
+      "latency_seconds": 4.44,
+      "model_calls": 3,
+      "total_tokens": 11642,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "resched-01",
+      "category": "reschedule",
+      "utterance": "Việc đóng tiền internet bị trễ rồi, xếp lại lịch giúp tôi",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 5,
+      "total_checks": 5,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "list_tasks",
+          "args": {
+            "keyword": "đóng tiền internet"
+          }
+        },
+        {
+          "name": "reschedule_tasks",
+          "args": {}
+        },
+        {
+          "name": "list_tasks",
+          "args": {
+            "keyword": "đóng tiền internet"
+          }
+        },
+        {
+          "name": "reschedule_tasks",
+          "args": {}
+        }
+      ],
+      "reply": "Tôi đã xếp lại lịch cho việc \"Đóng tiền internet\" của bạn:\n\n*   **Công việc:** Đóng tiền internet\n*   **Thời gian mới:** 2026-10-15 09:00 - 09:15\n\nLưu ý: Hạn chót của việc này là 2026-10-13, vì vậy bạn nên thực hiện sớm nhất có thể nhé!",
+      "latency_seconds": 5.22,
+      "model_calls": 5,
+      "total_tokens": 18870,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "resched-02",
+      "category": "reschedule",
+      "utterance": "Mấy việc trễ hạn hết rồi, sắp xếp lại lịch cho tôi",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 10,
+      "total_checks": 10,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "reschedule_tasks",
+          "args": {}
+        },
+        {
+          "name": "reschedule_tasks",
+          "args": {}
+        }
+      ],
+      "reply": "Tôi đã sắp xếp lại các công việc bị trễ hạn cho bạn vào ngày mai (2026-10-15) như sau:\n\n*   **Sửa lỗi đăng nhập**: 09:00 - 11:00\n*   **Nộp bảng chấm công**: 11:00 - 12:00\n\nBạn kiểm tra lại xem lịch này có phù hợp không nhé!",
+      "latency_seconds": 2.91,
+      "model_calls": 3,
+      "total_tokens": 11320,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "resched-03",
+      "category": "reschedule",
+      "utterance": "Có việc phát sinh: sửa server lúc 9 giờ sáng mai, mất 2 tiếng. Thêm việc đó rồi dời các việc đang trễ ra sau.",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 6,
+      "total_checks": 6,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_task",
+          "args": {
+            "title": "Sửa server",
+            "estimated_minutes": 120,
+            "planned_start": "2026-10-15 09:00"
+          }
+        },
+        {
+          "name": "reschedule_tasks",
+          "args": {}
+        },
+        {
+          "name": "create_task",
+          "args": {
+            "title": "Sửa server",
+            "estimated_minutes": 120,
+            "planned_start": "2026-10-15 09:00"
+          }
+        },
+        {
+          "name": "reschedule_tasks",
+          "args": {}
+        }
+      ],
+      "reply": "Tôi đã thêm việc \"Sửa server\" vào lúc 9:00 sáng mai (2026-10-15) và dời các công việc bị trễ để không bị trùng lịch:\n\n*   **Sửa server**: Đã lên lịch vào 2026-10-15 09:00 - 11:00.\n*   **Viết báo cáo tuần**: Đã dời sang bắt đầu lúc 2026-10-15 11:00.\n\nLưu ý: Độ ưu tiên \"high\" cho việc sửa server là gợi ý từ hệ thống, bạn có thể thay đổi nếu cần.",
+      "latency_seconds": 2.84,
+      "model_calls": 3,
+      "total_tokens": 11587,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "project-11",
+      "category": "project",
+      "utterance": "Lập kế hoạch chuẩn bị tài liệu họp tổng kết năm, phải xong trước thứ 6 tuần này",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 1,
+      "total_checks": 1,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "create_project_plan",
+          "args": {
+            "finish_by": "2026-10-16 23:59",
+            "project_name": "Họp tổng kết năm",
+            "steps": [
+              {
+                "estimated_minutes": 60,
+                "priority": "medium",
+                "title": "Thu thập số liệu các phòng ban"
+              },
+              {
+                "priority": "high",
+                "title": "Tổng hợp báo cáo kết quả kinh doanh",
+                "estimated_minutes": 120
+              },
+              {
+                "estimated_minutes": 90,
+                "title": "Thiết kế slide thuyết trình",
+                "priority": "medium"
+              },
+              {
+                "priority": "high",
+                "estimated_minutes": 60,
+                "title": "Rà soát và chỉnh sửa tài liệu cuối cùng"
+              }
+            ],
+            "goal": "Chuẩn bị tài liệu họp tổng kết năm"
+          }
+        }
+      ],
+      "reply": "Tôi đã lập kế hoạch cho dự án **\"Họp tổng kết năm\"** để bạn hoàn thành trước thứ Sáu (2026-10-16). Dưới đây là các bước thực hiện:\n\n*   **Thu thập số liệu các phòng ban** (60 phút, ưu tiên trung bình)\n*   **Tổng hợp báo cáo kết quả kinh doanh** (120 phút, ưu tiên cao)\n*   **Thiết kế slide thuyết trình** (90 phút, ưu tiên trung bình)\n*   **Rà soát và chỉnh sửa tài liệu cuối cùng** (60 phút, ưu tiên cao)\n\nĐể hoàn thành đúng hạn, bạn nên dành khoảng 4 giờ mỗi ngày cho các công việc này. Bạn có muốn tôi điều chỉnh thời gian bắt đầu cho bất kỳ bước nào không?",
+      "latency_seconds": 2.94,
+      "model_calls": 2,
+      "total_tokens": 8193,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "alerts-01",
+      "category": "alerts",
+      "utterance": "Lịch của tôi ngày mai có bị trùng giờ không?",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 2,
+      "total_checks": 2,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "check_schedule",
+          "args": {
+            "days": 1
+          }
+        }
+      ],
+      "reply": "Ngày mai (2026-10-15), lịch của bạn đang bị trùng giờ:\n\n*   **09:00 – 11:00:** Họp với khách\n*   **10:00 – 11:00:** Viết tài liệu thiết kế\n\nBạn có muốn tôi dời lịch của một trong hai việc này sang khung giờ khác không?",
+      "latency_seconds": 2.6,
+      "model_calls": 2,
+      "total_tokens": 7540,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "alerts-02",
+      "category": "alerts",
+      "utterance": "Có việc nào đang trễ hoặc sắp trễ hạn không?",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 2,
+      "total_checks": 2,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "check_schedule",
+          "args": {
+            "days": 3
+          }
+        }
+      ],
+      "reply": "Hiện tại, bạn đang có một công việc bị trễ hạn:\n\n*   **Đóng tiền internet** (ID: 4): Đã quá hạn từ ngày 2026-10-13 23:59.\n\nBạn có muốn tôi dời hạn công việc này sang hôm nay hoặc một ngày khác không?",
+      "latency_seconds": 2.45,
+      "model_calls": 2,
+      "total_tokens": 7510,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "report-01",
+      "category": "report",
+      "utterance": "Tổng kết tiến độ tuần này giúp tôi",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 1,
+      "total_checks": 1,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "progress_report",
+          "args": {
+            "period": "week"
+          }
+        }
+      ],
+      "reply": "Chào bạn, dưới đây là tổng kết tiến độ công việc của bạn trong tuần này (tính đến ngày 14/10):\n\n**Tình hình chung:**\n*   **Đã hoàn thành:** 1 việc (Viết blog cá nhân).\n*   **Đang trễ hạn:** 1 việc cần bạn xử lý ngay.\n*   **Sắp đến hạn:** 2 việc trong những ngày tới.\n\n**Chi tiết:**\n*   **Việc trễ hạn:**\n    *   **Đóng tiền internet:** Hạn chót là ngày 13/10. Bạn nên ưu tiên thực hiện sớm nhé.\n*   **Việc sắp đến hạn:**\n    *   **Nộp báo cáo thực tập:** Hạn chót là ngày 16/10 (thứ Sáu).\n    *   **Ôn thi giải tích:** Hạn chót là ngày 20/10 (thứ Ba tuần sau).\n\nBạn có muốn mình hỗ trợ dời lịch hoặc lên kế hoạch cụ thể cho các việc này không?",
+      "latency_seconds": 2.94,
+      "model_calls": 2,
+      "total_tokens": 7839,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "report-02",
+      "category": "report",
+      "utterance": "Viết standup report hôm nay cho tôi",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 1,
+      "total_checks": 1,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "progress_report",
+          "args": {
+            "period": "day"
+          }
+        }
+      ],
+      "reply": "Chào bạn, đây là báo cáo tiến độ công việc của bạn trong ngày hôm nay (14/10/2026):\n\n**Tổng kết:**\n*   **Đã hoàn thành:** 1 việc (Viết blog cá nhân).\n*   **Đang làm:** Không có.\n*   **Trễ hạn:** 1 việc cần xử lý ngay là **Đóng tiền internet** (hạn chót là ngày hôm qua 13/10).\n*   **Sắp đến hạn:** \n    *   Nộp báo cáo thực tập (hạn 16/10).\n    *   Ôn thi giải tích (hạn 20/10).\n\n**Lưu ý:** Bạn nên ưu tiên xử lý việc đóng tiền internet ngay hôm nay để tránh bị gián đoạn dịch vụ nhé. Bạn có muốn mình hỗ trợ dời lịch hoặc lên kế hoạch cho các việc sắp tới không?",
+      "latency_seconds": 5.68,
+      "model_calls": 2,
+      "total_tokens": 7811,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "memory-01",
+      "category": "memory",
+      "utterance": "Nhớ giúp tôi là tôi không làm việc vào chủ nhật",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 1,
+      "total_checks": 1,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "remember_fact",
+          "args": {
+            "fact": "Người dùng không làm việc vào chủ nhật."
+          }
+        }
+      ],
+      "reply": "Đã ghi nhớ: Bạn không làm việc vào chủ nhật. Tôi sẽ lưu ý điều này khi lập kế hoạch cho bạn.",
+      "latency_seconds": 2.25,
+      "model_calls": 2,
+      "total_tokens": 7460,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    },
+    {
+      "id": "memory-02",
+      "category": "memory",
+      "utterance": "Tôi thường tập trung tốt nhất từ 8 đến 11 giờ sáng, hãy nhớ điều đó khi lên lịch",
+      "success": true,
+      "tool_selection_ok": true,
+      "passed_checks": 1,
+      "total_checks": 1,
+      "failed_checks": [],
+      "tool_calls": [
+        {
+          "name": "remember_fact",
+          "args": {
+            "fact": "Người dùng tập trung tốt nhất từ 8:00 đến 11:00 sáng."
+          }
+        }
+      ],
+      "reply": "Tôi đã ghi nhớ sở thích của bạn: bạn tập trung tốt nhất vào khung giờ 8:00 - 11:00 sáng. Tôi sẽ ưu tiên sắp xếp các công việc quan trọng vào khoảng thời gian này khi hỗ trợ bạn lập kế hoạch.",
+      "latency_seconds": 4.34,
+      "model_calls": 2,
+      "total_tokens": 7559,
+      "model_name": "gemini-3.1-flash-lite",
+      "error": null
+    }
+  ]
+}
