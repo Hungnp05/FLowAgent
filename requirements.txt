@@ -1,1 +1,2 @@
+# Bump the flowagent version in pyproject.toml when dependencies change, so Streamlit Cloud reinstalls.
 -e .[dev]
