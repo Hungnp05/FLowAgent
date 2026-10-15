@@ -15,7 +15,13 @@ from flowagent.ml.synthetic_tasks import (
     normalize_task_text,
 )
 from flowagent.ml.text_cleaning import build_issue_text, strip_jira_markup
-from flowagent.ml.training import prepare_dataset, score_predictions, source_balanced_weights
+from flowagent.ml.training import (
+    apply_confidence_threshold,
+    choose_confidence_threshold,
+    prepare_dataset,
+    score_predictions,
+    source_balanced_weights,
+)
 
 
 @pytest.mark.parametrize(
@@ -147,3 +153,28 @@ def test_build_generation_prompt_contains_definition_and_theme() -> None:
     """The prompt carries the label definition and theme, and forbids leaking the label word."""
     prompt = build_generation_prompt("personal", "urgent", "sức khoẻ", 10)
     assert "sức khoẻ" in prompt and "vài giờ" in prompt and '"khẩn cấp"' in prompt
+
+
+def test_apply_confidence_threshold_falls_back_to_medium() -> None:
+    """Rows below the threshold become medium; confident rows keep their best class."""
+    probabilities = np.array([[0.1, 0.2, 0.7, 0.0], [0.3, 0.2, 0.45, 0.05]])
+    classes = ["high", "low", "medium", "urgent"]
+    assert apply_confidence_threshold(probabilities, classes, 0.5) == ["medium", "medium"]
+    confident = np.array([[0.8, 0.1, 0.1, 0.0]])
+    assert apply_confidence_threshold(confident, classes, 0.5) == ["high"]
+
+
+def test_choose_confidence_threshold_prefers_lowest_best() -> None:
+    """When no threshold helps, the lowest candidate (no fallback) is kept."""
+    probabilities = np.array([[0.9, 0.1], [0.2, 0.8]])
+    threshold, score = choose_confidence_threshold(probabilities, ["high", "low"], ["high", "low"])
+    assert threshold == 0.0
+    assert score > 0
+
+
+def test_predictor_flags_low_confidence() -> None:
+    """A prediction below the saved threshold is marked as not confident."""
+    features = np.array([[0.0], [0.1], [1.0], [1.1]])
+    classifier = LogisticRegression().fit(features, ["low", "low", "urgent", "urgent"])
+    predictor = PriorityPredictor(classifier, lambda texts: np.array([[0.55] for _ in texts]), 0.9)
+    assert not predictor.predict("anything").is_confident

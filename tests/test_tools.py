@@ -175,3 +175,12 @@ def test_update_task_without_changes_raises(tool_config: dict) -> None:
     create_task.invoke({"title": "Nộp học phí"}, tool_config)
     with pytest.raises(NoChangesError):
         update_task.invoke({"task_id": 1, "priority": None}, tool_config)
+
+
+def test_create_task_uses_medium_when_model_is_unsure(engine) -> None:
+    """A low-confidence suggestion is not applied; the task gets medium and says why."""
+    unsure = PriorityPrediction(Priority.HIGH, 0.54, is_confident=False)
+    result = create_task.invoke({"title": "Ôn thi"}, config_with_predictor(engine, unsure))
+    assert "chưa đủ chắc chắn" in result
+    with session_scope(engine) as session:
+        assert crud.list_tasks(session)[0].priority == Priority.MEDIUM

@@ -4,7 +4,7 @@ import pytest
 from sqlmodel import Session
 
 from flowagent.db import crud
-from flowagent.db.models import Priority, TaskStatus
+from flowagent.db.models import Priority, TaskStatus, shift_priority
 from flowagent.db.schemas import TaskCreate, TaskFilter, TaskUpdate
 from flowagent.errors import InvalidScheduleError, ProjectExistsError, TaskNotFoundError
 
@@ -90,3 +90,19 @@ def test_keyword_search_ignores_accents_and_word_order(session: Session) -> None
     crud.create_task(session, TaskCreate(title="Ôn thi vật lý"))
     found = crud.list_tasks(session, TaskFilter(keyword="giai tich on thi"))
     assert [task.title for task in found] == ["Ôn thi giải tích"]
+
+
+@pytest.mark.parametrize(
+    ("start", "steps", "expected"),
+    [
+        (Priority.MEDIUM, 1, Priority.HIGH),
+        (Priority.HIGH, -1, Priority.MEDIUM),
+        (Priority.URGENT, 1, Priority.URGENT),
+        (Priority.LOW, -1, Priority.LOW),
+    ],
+)
+def test_shift_priority_moves_one_level_and_stops_at_bounds(
+    start: Priority, steps: int, expected: Priority
+) -> None:
+    """Raising or lowering moves one level and never goes past urgent or low."""
+    assert shift_priority(start, steps) == expected
