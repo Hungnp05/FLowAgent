@@ -14,5 +14,11 @@
     "near_duplicates_removed": 0,
     "eval_leakage_removed": 26,
     "kept": 603
+  },
+  "label_review": {
+    "method": "5-fold cross-validated disagreement flagged 144 rows; each was read against the generation rubric and only clear violations were relabelled (eval set not consulted)",
+    "flagged": 144,
+    "relabelled": 48,
+    "log": "vietnamese_tasks_synthetic_relabels.csv"
   }
 }
