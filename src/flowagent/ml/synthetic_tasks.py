@@ -15,8 +15,8 @@ from pydantic import BaseModel, Field
 
 from flowagent.agent.llm import ModelSpec, build_chat_model
 from flowagent.config import get_settings
+from flowagent.db.models import PRIORITY_ORDER
 from flowagent.ml.embeddings import embed_texts
-from flowagent.ml.labels import PRIORITY_ORDER
 
 logger = logging.getLogger(__name__)
 
