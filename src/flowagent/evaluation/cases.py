@@ -6,7 +6,20 @@ from pydantic import BaseModel, Field
 from flowagent.db.models import Priority, TaskStatus
 
 DEFAULT_CASES_PATH = Path("evals/cases.jsonl")
-MUTATING_TOOLS = frozenset({"create_task", "update_task", "delete_task", "create_project_plan"})
+MUTATING_TOOLS = frozenset(
+    {
+        "create_task",
+        "update_task",
+        "delete_task",
+        "create_project_plan",
+        "create_event",
+        "update_event",
+        "delete_event",
+        "create_tasks_from_notes",
+        "reschedule_tasks",
+        "remember_fact",
+    }
+)
 
 
 class SeedTask(BaseModel):
