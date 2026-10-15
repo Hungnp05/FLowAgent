@@ -24,14 +24,7 @@ JIRA_PRIORITY_TO_APP: dict[str, Priority] = {
 class PriorityPrediction:
     priority: Priority
     confidence: float
-
-
-PRIORITY_ORDER: tuple[Priority, ...] = (
-    Priority.LOW,
-    Priority.MEDIUM,
-    Priority.HIGH,
-    Priority.URGENT,
-)
+    is_confident: bool = True
 
 
 def map_jira_priority(jira_priority: str) -> Priority | None:
