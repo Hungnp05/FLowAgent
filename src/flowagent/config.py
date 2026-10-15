@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = 60.0
     database_url: str = "sqlite:///data/flowagent.db"
     secret_key_path: str = "data/secret.key"
+    chat_history_path: str = "data/chat_history.db"
     priority_model_path: str = "models/priority_classifier.joblib"
     timezone: str = "Asia/Ho_Chi_Minh"
 
