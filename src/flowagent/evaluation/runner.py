@@ -33,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 EVAL_NOW = datetime(2026, 10, 14, 10, 0)
 RESULTS_DIR = Path("evals/results")
+TRACKED_EVAL_PATHS = ("src", "evals/cases.jsonl")
+DIRTY_SUFFIX = "-dirty"
 THREAD_ID = "eval"
 PAUSE_BETWEEN_CASES_SECONDS = 4.0
 RETRY_WAIT_SECONDS = 30.0
@@ -214,15 +216,20 @@ def save_results(output_path: Path, label: str, model_label: str, records: list[
     return result
 
 
+def run_git(*args: str) -> str:
+    """Run a git command and return its trimmed output."""
+    completed = subprocess.run(["git", *args], capture_output=True, text=True, check=True)
+    return completed.stdout.strip()
+
+
 def current_git_commit() -> str:
-    """Return the short git commit hash, or 'unknown' outside a repository."""
+    """Return the short commit hash, marked '-dirty' when agent code or cases are uncommitted."""
     try:
-        completed = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True
-        )
+        commit = run_git("rev-parse", "--short", "HEAD")
+        uncommitted = run_git("status", "--porcelain", "--", *TRACKED_EVAL_PATHS)
     except (OSError, subprocess.CalledProcessError):
         return "unknown"
-    return completed.stdout.strip()
+    return f"{commit}{DIRTY_SUFFIX}" if uncommitted else commit
 
 
 def main() -> None:

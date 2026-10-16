@@ -41,7 +41,6 @@ from flowagent.db.session import session_scope
 from flowagent.errors import (
     FlowAgentError,
     InvalidDateError,
-    NoChangesError,
     PriorityModelUnavailableError,
 )
 from flowagent.ml.labels import PriorityPrediction
@@ -67,6 +66,11 @@ END_OF_DAY = time(hour=23, minute=59)
 MAX_STEP_MINUTES = 2400
 DELETE_CANCELLED_MESSAGE = "Người dùng đã huỷ thao tác xoá."
 LOW_CONFIDENCE_NOTE = " (mô hình chưa đủ chắc chắn nên để mức trung bình)"
+SAVED_NOTE = " Việc đã được lưu xong, không cần gọi thêm công cụ để xác nhận."
+NO_CHANGES_MESSAGE = (
+    "Không có gì thay đổi: {kind} #{item_id} giữ nguyên. Dữ liệu đã đúng, "
+    "không cần gọi thêm công cụ nào."
+)
 DEFAULT_EVENT_MINUTES = 60
 
 
@@ -182,7 +186,7 @@ def create_task(
             ),
         )
         conflict_note = describe_task_conflicts(session, task)
-        return f"Đã tạo: {format_task(task)}{suggestion_note}{conflict_note}"
+        return f"Đã tạo: {format_task(task)}{suggestion_note}{conflict_note}{SAVED_NOTE}"
 
 
 @tool
@@ -232,9 +236,7 @@ def update_task(
     }
     given_changes = {field: value for field, value in provided_changes.items() if value is not None}
     if not given_changes:
-        raise NoChangesError(
-            "Không có trường nào để cập nhật; chỉ gọi update_task khi cần đổi giá trị."
-        )
+        return NO_CHANGES_MESSAGE.format(kind="công việc", item_id=task_id)
     changes = TaskUpdate(**given_changes)
     with session_scope(deps.engine) as session:
         task = crud.update_task(session, task_id, changes)
@@ -404,9 +406,7 @@ def update_event(
     }
     given_changes = {field: value for field, value in provided_changes.items() if value is not None}
     if not given_changes:
-        raise NoChangesError(
-            "Không có trường nào để cập nhật; chỉ gọi update_event khi cần đổi giá trị."
-        )
+        return NO_CHANGES_MESSAGE.format(kind="lịch trình", item_id=event_id)
     with session_scope(deps.engine) as session:
         event = crud.update_event(session, event_id, ScheduleEventUpdate(**given_changes))
         conflict_note = describe_event_conflicts(session, event, deps.clock())

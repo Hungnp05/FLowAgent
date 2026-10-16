@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pytest
+from sqlalchemy import Engine
 
 from flowagent.agent.tools import (
     DEPS_CONFIG_KEY,
@@ -19,7 +20,6 @@ from flowagent.db.session import session_scope
 from flowagent.errors import (
     InvalidDateError,
     InvalidScheduleError,
-    NoChangesError,
     PriorityModelUnavailableError,
 )
 from flowagent.ml.labels import PriorityPrediction
@@ -170,11 +170,13 @@ def test_list_tasks_keyword_search_includes_done_tasks(tool_config: dict) -> Non
     assert "Viết blog" not in list_tasks.invoke({}, tool_config)
 
 
-def test_update_task_without_changes_raises(tool_config: dict) -> None:
-    """An update that changes nothing is rejected instead of silently succeeding."""
-    create_task.invoke({"title": "Nộp học phí"}, tool_config)
-    with pytest.raises(NoChangesError):
-        update_task.invoke({"task_id": 1, "priority": None}, tool_config)
+def test_update_task_without_changes_is_a_calm_no_op(engine: Engine, tool_config: dict) -> None:
+    """An empty update leaves the task untouched and tells the model nothing more is needed."""
+    create_task.invoke({"title": "Nộp học phí", "priority": "high"}, tool_config)
+    result = update_task.invoke({"task_id": 1, "priority": None}, tool_config)
+    assert "Không có gì thay đổi" in result and "không cần gọi thêm" in result
+    with session_scope(engine) as session:
+        assert crud.get_task(session, 1).priority == Priority.HIGH
 
 
 def test_create_task_uses_medium_when_model_is_unsure(engine) -> None:

@@ -46,9 +46,5 @@ class PriorityModelUnavailableError(FlowAgentError):
     pass
 
 
-class NoChangesError(FlowAgentError, ValueError):
-    pass
-
-
 class MemoryNotFoundError(FlowAgentError, LookupError):
     pass

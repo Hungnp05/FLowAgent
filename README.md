@@ -71,6 +71,8 @@ Bản này chạy ở **chế độ công khai** (`PUBLIC_MODE=true`):
 
 Để tự triển khai bản công khai trên Streamlit Community Cloud: đặt `PUBLIC_MODE = "true"` trong **Settings → Secrets** và không cần đặt API key nào. Khi chạy ở máy cá nhân, để `PUBLIC_MODE=false` (mặc định) thì app dùng CSDL thật, key trong `.env` hoặc trang Cài đặt API có mã PIN.
 
+> Sau mỗi lần push có thay đổi trong `src/`, vào **Manage app → Reboot app**. Streamlit Cloud chỉ tự nạp lại mã trong `app/`; gói `flowagent` trong `src/` vẫn là bản cũ trong bộ nhớ cho tới khi app khởi động lại, gây lỗi `ImportError: cannot import name ...`.
+
 ## Hướng dẫn sử dụng
 
 ### Trợ lý

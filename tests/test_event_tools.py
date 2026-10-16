@@ -10,7 +10,7 @@ from flowagent.db import crud
 from flowagent.db.models import Recurrence
 from flowagent.db.schemas import ScheduleEventCreate
 from flowagent.db.session import session_scope
-from flowagent.errors import EventNotFoundError, NoChangesError
+from flowagent.errors import EventNotFoundError
 from tests.conftest import fixed_clock
 from tests.test_agent_service import ScriptedChatModel, tool_call_message
 
@@ -73,8 +73,7 @@ def test_update_event_changes_only_given_fields(engine: Engine, tool_config: dic
         datetime(2026, 10, 16, 19, 0),
         Recurrence.WEEKLY,
     )
-    with pytest.raises(NoChangesError):
-        update_event.invoke({"event_id": 1}, tool_config)
+    assert "Không có gì thay đổi" in update_event.invoke({"event_id": 1}, tool_config)
 
 
 @pytest.mark.parametrize(("is_approved", "should_exist"), [(True, False), (False, True)])
