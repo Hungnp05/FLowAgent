@@ -68,6 +68,7 @@ class CalendarEntry:
     reminder_minutes: int = 0
     priority: Priority = Priority.MEDIUM
     note: str = ""
+    is_flexible: bool = False
 
 
 @dataclass(frozen=True)
@@ -214,6 +215,16 @@ def deadline_entry(task: Task, mark: str) -> CalendarEntry | None:
     )
 
 
+def has_flexible_work(task: Task) -> bool:
+    """Report whether a task's exact working hours are open: spread over days or with slack."""
+    if task.planned_start is None or task.deadline is None:
+        return False
+    if task.deadline.date() != task.planned_start.date():
+        return True
+    window_minutes = int((task.deadline - task.planned_start).total_seconds() // 60)
+    return task.estimated_minutes is not None and task.estimated_minutes < window_minutes
+
+
 def task_to_entries(task: Task) -> list[CalendarEntry]:
     """Show a task on the calendar as a work block from its start and a deadline marker."""
     mark = DONE_PREFIX if task.status == TaskStatus.DONE else ""
@@ -229,6 +240,7 @@ def task_to_entries(task: Task) -> list[CalendarEntry]:
                 duration_minutes=work_block_minutes(task),
                 priority=task.priority,
                 note=task.description,
+                is_flexible=has_flexible_work(task),
             )
         )
     marker = deadline_entry(task, mark)
@@ -245,8 +257,8 @@ def build_calendar_entries(
 
 
 def blocks_time(entry: CalendarEntry) -> bool:
-    """Report whether an entry occupies clock time (timed events and work blocks, not markers)."""
-    return not entry.all_day and not entry.key.endswith(DEADLINE_KEY_SUFFIX)
+    """Report whether an entry pins clock time: timed events and fixed work, not markers."""
+    return not (entry.all_day or entry.is_flexible or entry.key.endswith(DEADLINE_KEY_SUFFIX))
 
 
 def busy_periods(

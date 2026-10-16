@@ -153,3 +153,26 @@ def test_build_progress_report_groups_tasks() -> None:
     assert [task.id for task in report.in_progress] == [3]
     assert [task.id for task in report.overdue] == [4]
     assert [task.id for task in report.upcoming] == [3]
+
+
+def test_multi_day_and_slack_work_does_not_count_as_a_clash() -> None:
+    """Work spread over days or with slack before its deadline never pins an exact time."""
+    meeting = ScheduleEvent(id=1, title="Họp", start_at=datetime(2026, 10, 15, 10, 0))
+    spread = make_task(
+        2,
+        planned_start=datetime(2026, 10, 15, 9, 0),
+        deadline=datetime(2026, 10, 16, 13, 0),
+        estimated_minutes=480,
+    )
+    slack = make_task(
+        3,
+        planned_start=datetime(2026, 10, 15, 9, 0),
+        deadline=datetime(2026, 10, 15, 12, 0),
+        estimated_minutes=120,
+    )
+    pinned = make_task(
+        4, planned_start=datetime(2026, 10, 15, 9, 30), deadline=datetime(2026, 10, 15, 10, 30)
+    )
+    entries = build_calendar_entries([meeting], [spread, slack, pinned])
+    conflicts = find_conflicts(entries, date(2026, 10, 15), date(2026, 10, 16))
+    assert [(c.first.entry.source_id, c.second.entry.source_id) for c in conflicts] == [(4, 1)]
