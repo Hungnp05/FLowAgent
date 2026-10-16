@@ -51,3 +51,17 @@ def save_llm_config(session: Session, config: LlmConfig, box: SecretBox) -> None
 def is_saved_in_app(session: Session, key: SettingKey) -> bool:
     """Report whether a setting comes from the app rather than from .env."""
     return get_setting(session, key) is not None
+
+
+def build_visitor_llm_config(
+    settings: Settings, provider: LlmProvider, gemini_api_key: str, groq_api_key: str
+) -> LlmConfig:
+    """Combine a visitor's own API keys with the default model names, ignoring server keys."""
+    return LlmConfig(
+        llm_provider=provider,
+        gemini_api_key=gemini_api_key.strip(),
+        gemini_model=settings.gemini_model,
+        gemini_fallback_model=settings.gemini_fallback_model,
+        groq_api_key=groq_api_key.strip(),
+        groq_model=settings.groq_model,
+    )

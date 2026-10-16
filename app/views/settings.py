@@ -8,12 +8,28 @@ from flowagent.db.app_settings import SettingKey
 from flowagent.db.session import session_scope
 from flowagent.errors import InvalidPinError, MissingApiKeyError, SecretDecryptionError
 from flowagent.security.pin_guard import attempt_unlock, change_pin, create_pin, has_pin
-from views.shared import get_engine, get_secret_box, load_current_llm_config
+from views.shared import (
+    get_engine,
+    get_secret_box,
+    get_visitor_keys,
+    is_public_mode,
+    load_current_llm_config,
+    set_visitor_keys,
+)
 
 UNLOCKED_STATE_KEY = "settings_unlocked"
 PIN_MAX_LENGTH = 8
 PROVIDER_LABELS = {"gemini": "Google Gemini", "groq": "Groq"}
 ENV_KEY_PLACEHOLDER = "Để trống để dùng key trong file .env"
+VISITOR_KEY_NOTICE = (
+    "Đây là bản demo công khai: mỗi người dùng API key miễn phí của chính mình. Key chỉ được "
+    "giữ trong phiên trình duyệt này, không lưu lên máy chủ và mất khi bạn đóng tab. Dữ liệu "
+    "công việc của bạn cũng là dữ liệu mẫu riêng cho phiên này."
+)
+FREE_KEY_LINKS = (
+    "Lấy key miễn phí: [Google AI Studio](https://aistudio.google.com/apikey) · "
+    "[Groq Console](https://console.groq.com/keys)"
+)
 
 
 def pin_input(label: str, key: str) -> str:
@@ -163,9 +179,42 @@ def render_unlocked_settings() -> None:
     render_change_pin_form()
 
 
+def render_visitor_key_form() -> None:
+    """Let a public visitor enter their own keys, kept only in this browser session."""
+    provider, gemini_key, groq_key = get_visitor_keys()
+    with st.form("visitor_keys"):
+        new_provider = st.radio(
+            "Nhà cung cấp chính",
+            list(PROVIDER_LABELS),
+            index=list(PROVIDER_LABELS).index(provider),
+            format_func=PROVIDER_LABELS.get,
+            horizontal=True,
+        )
+        new_gemini_key = st.text_input("Gemini API key", gemini_key, type="password")
+        new_groq_key = st.text_input("Groq API key", groq_key, type="password")
+        is_submitted = st.form_submit_button("Dùng key này", icon=":material/key:", type="primary")
+    if is_submitted:
+        set_visitor_keys(new_provider, new_gemini_key, new_groq_key)
+        st.success("Đã lưu key cho phiên này. Mở trang Trợ lý để bắt đầu trò chuyện.")
+
+
+def render_visitor_settings() -> None:
+    """Show the bring-your-own-key form used by the public demo instead of the PIN flow."""
+    st.info(VISITOR_KEY_NOTICE, icon=":material/info:")
+    st.markdown(FREE_KEY_LINKS)
+    render_visitor_key_form()
+    if st.button("Xoá key khỏi phiên", icon=":material/delete:"):
+        set_visitor_keys("gemini", "", "")
+        st.rerun()
+    render_connection_check(load_current_llm_config())
+
+
 def render_settings_page() -> None:
     """Guard the API settings behind a PIN, creating one on first visit."""
     st.title("Cài đặt API")
+    if is_public_mode():
+        render_visitor_settings()
+        return
     with session_scope(get_engine()) as session:
         is_pin_created = has_pin(session)
     if not is_pin_created:

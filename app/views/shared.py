@@ -5,19 +5,22 @@ from pathlib import Path
 
 import streamlit as st
 from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.sqlite import SqliteSaver
 from sqlalchemy import Engine
 
 from flowagent.agent.factory import create_flow_agent
-from flowagent.agent.llm_config import LlmConfig, load_llm_config
+from flowagent.agent.llm_config import LlmConfig, build_visitor_llm_config, load_llm_config
 from flowagent.agent.service import FlowAgent
 from flowagent.agent.tools import PriorityPredictorFn
-from flowagent.config import get_settings
+from flowagent.clock import now_local
+from flowagent.config import LlmProvider, get_settings
 from flowagent.db import crud
 from flowagent.db.app_settings import SettingKey, get_setting, set_setting
 from flowagent.db.models import MemoryNote, Priority, Task, TaskStatus
 from flowagent.db.schemas import TaskFilter, TaskUpdate
-from flowagent.db.session import create_db_engine, session_scope
+from flowagent.db.session import IN_MEMORY_SQLITE_URL, create_db_engine, session_scope
+from flowagent.demo_data import seed_demo_data
 from flowagent.ml.predictor import load_priority_predictor
 from flowagent.security.secret_box import SecretBox, load_or_create_secret_box
 
@@ -35,12 +38,39 @@ PRIORITY_LABELS = {
     Priority.URGENT: "Khẩn cấp",
 }
 STATUS_ORDER = list(STATUS_LABELS)
+SESSION_ENGINE_KEY = "public_session_engine"
+SESSION_CHECKPOINTER_KEY = "public_session_checkpointer"
+SESSION_AGENT_KEY = "public_session_agent"
+VISITOR_KEYS_KEY = "public_visitor_keys"
+DEFAULT_VISITOR_PROVIDER: LlmProvider = "gemini"
+
+
+def is_public_mode() -> bool:
+    """Report whether this deployment is a public demo where visitors bring their own keys."""
+    return get_settings().public_mode
 
 
 @st.cache_resource
-def get_engine() -> Engine:
+def get_shared_engine() -> Engine:
     """Create the database engine once per Streamlit server process."""
     return create_db_engine(get_settings().database_url)
+
+
+def create_demo_engine() -> Engine:
+    """Create a private in-memory database filled with sample data for one visitor."""
+    engine = create_db_engine(IN_MEMORY_SQLITE_URL)
+    with session_scope(engine) as session:
+        seed_demo_data(session, now_local())
+    return engine
+
+
+def get_engine() -> Engine:
+    """Return this browser session's private demo database in public mode, else the shared one."""
+    if not is_public_mode():
+        return get_shared_engine()
+    if SESSION_ENGINE_KEY not in st.session_state:
+        st.session_state[SESSION_ENGINE_KEY] = create_demo_engine()
+    return st.session_state[SESSION_ENGINE_KEY]
 
 
 @st.cache_resource
@@ -55,6 +85,15 @@ def get_checkpointer() -> BaseCheckpointSaver:
     history_path = Path(get_settings().chat_history_path)
     history_path.parent.mkdir(parents=True, exist_ok=True)
     return SqliteSaver(sqlite3.connect(history_path, check_same_thread=False))
+
+
+def get_conversation_store() -> BaseCheckpointSaver:
+    """Return the shared chat history store, or a private in-memory one per public visitor."""
+    if not is_public_mode():
+        return get_checkpointer()
+    if SESSION_CHECKPOINTER_KEY not in st.session_state:
+        st.session_state[SESSION_CHECKPOINTER_KEY] = InMemorySaver()
+    return st.session_state[SESSION_CHECKPOINTER_KEY]
 
 
 def get_chat_thread_id() -> str:
@@ -90,8 +129,20 @@ def forget_memory(memory_id: int) -> None:
         crud.delete_memory(session, memory_id)
 
 
+def get_visitor_keys() -> tuple[LlmProvider, str, str]:
+    """Return the provider and API keys a public visitor entered in this browser session."""
+    return st.session_state.get(VISITOR_KEYS_KEY, (DEFAULT_VISITOR_PROVIDER, "", ""))
+
+
+def set_visitor_keys(provider: LlmProvider, gemini_api_key: str, groq_api_key: str) -> None:
+    """Keep a public visitor's API keys in this browser session only, never in the database."""
+    st.session_state[VISITOR_KEYS_KEY] = (provider, gemini_api_key.strip(), groq_api_key.strip())
+
+
 def load_current_llm_config() -> LlmConfig:
-    """Read the LLM settings saved in the app, falling back to .env values."""
+    """Use a public visitor's own keys, or the settings saved in the app over the .env values."""
+    if is_public_mode():
+        return build_visitor_llm_config(get_settings(), *get_visitor_keys())
     with session_scope(get_engine()) as session:
         return load_llm_config(session, get_settings(), get_secret_box())
 
@@ -114,9 +165,24 @@ def build_agent_for_config(config_fingerprint: int, _config: LlmConfig) -> FlowA
     )
 
 
+def get_visitor_agent(config: LlmConfig) -> FlowAgent:
+    """Build and keep one agent per public visitor, on their own data, history and keys."""
+    fingerprint = hash(config)
+    cached = st.session_state.get(SESSION_AGENT_KEY)
+    if cached is not None and cached[0] == fingerprint:
+        return cached[1]
+    agent = create_flow_agent(
+        config, get_settings(), get_engine(), get_conversation_store(), get_priority_predictor()
+    )
+    st.session_state[SESSION_AGENT_KEY] = (fingerprint, agent)
+    return agent
+
+
 def get_agent() -> FlowAgent:
     """Return the agent for the current settings; raises MissingApiKeyError without any key."""
     config = load_current_llm_config()
+    if is_public_mode():
+        return get_visitor_agent(config)
     return build_agent_for_config(hash(config), config)
 
 

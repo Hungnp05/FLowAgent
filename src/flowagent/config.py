@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///data/flowagent.db"
     secret_key_path: str = "data/secret.key"
     chat_history_path: str = "data/chat_history.db"
+    public_mode: bool = False
     priority_model_path: str = "models/priority_classifier.joblib"
     timezone: str = "Asia/Ho_Chi_Minh"
 

@@ -11,6 +11,7 @@ from views.shared import (
     forget_memory,
     get_agent,
     get_chat_thread_id,
+    is_public_mode,
     load_memories,
     start_new_chat_thread,
 )
@@ -25,6 +26,9 @@ CHAT_EXAMPLES = (
     "Lịch tuần này có bị trùng không?",
 )
 NOTICES_KEY = "chat_notices"
+PUBLIC_DEMO_NOTICE = (
+    "Bản demo: bạn đang dùng dữ liệu mẫu riêng cho phiên này; mọi thay đổi sẽ mất khi đóng tab."
+)
 CONFIRMATION_TEXTS = {
     "delete_task": ("Xác nhận xoá công việc?", "Xác nhận xoá"),
     "delete_event": ("Xác nhận xoá lịch trình?", "Xác nhận xoá"),
@@ -110,6 +114,8 @@ def render_chat_page() -> None:
     except (MissingApiKeyError, SecretDecryptionError) as error:
         st.warning(f"{error} Mở trang **Cài đặt API** ở thanh bên để thêm key.")
         return
+    if is_public_mode():
+        st.caption(PUBLIC_DEMO_NOTICE)
     thread_id = get_chat_thread_id()
     history = agent.history(thread_id)
     if not history:

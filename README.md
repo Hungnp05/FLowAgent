@@ -59,6 +59,18 @@ Thay vì nhập trên trang, bạn có thể điền key vào file `.env`. Key n
 
 > Nên có cả key Gemini lẫn Groq: khi Gemini quá tải, app tự chuyển sang Groq.
 
+## Bản demo công khai
+
+Bản online: **https://flowagent123.streamlit.app**
+
+Bản này chạy ở **chế độ công khai** (`PUBLIC_MODE=true`):
+
+- Mỗi người dùng **API key miễn phí của chính mình**: mở trang **Cài đặt API**, dán key Gemini (lấy ở [Google AI Studio](https://aistudio.google.com/apikey)) hoặc Groq (lấy ở [Groq Console](https://console.groq.com/keys)). Key chỉ nằm trong phiên trình duyệt đó, không lưu lên máy chủ và mất khi đóng tab.
+- Mỗi phiên có **dữ liệu mẫu riêng** (việc cá nhân, một dự án đã lập kế hoạch, lịch lặp, ghi nhớ) để thử ngay. Không ai thấy dữ liệu của ai; dữ liệu mất khi đóng tab.
+- Không có mã PIN, vì không có key nào được lưu.
+
+Để tự triển khai bản công khai trên Streamlit Community Cloud: đặt `PUBLIC_MODE = "true"` trong **Settings → Secrets** và không cần đặt API key nào. Khi chạy ở máy cá nhân, để `PUBLIC_MODE=false` (mặc định) thì app dùng CSDL thật, key trong `.env` hoặc trang Cài đặt API có mã PIN.
+
 ## Hướng dẫn sử dụng
 
 ### Trợ lý
