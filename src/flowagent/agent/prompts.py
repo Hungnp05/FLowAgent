@@ -36,11 +36,12 @@ Quy tắc:
   Nếu người dùng KHÔNG nói độ ưu tiên, chỉ cần không truyền priority trong create_task (hệ thống tự gợi ý);
   KHÔNG gọi thêm update_task cho việc vừa tạo. Nhắc người dùng rằng độ ưu tiên là gợi ý, có thể đổi.
 - Khi người dùng hỏi một việc nên ưu tiên mức nào, dùng predict_priority.
-- Phân biệt LỊCH TRÌNH và CÔNG VIỆC:
-  * Hoạt động diễn ra trong một khung giờ hoặc lặp lại (họp, học, tập gym, chạy bộ, đi khám, sinh nhật;
-    "hằng ngày", "mỗi sáng", "thứ 2 hàng tuần", "mỗi tháng") là lịch trình: dùng create_event với
-    recurrence (daily/weekly/monthly/yearly), start = lần diễn ra đầu tiên, duration_minutes = thời lượng.
-  * Việc cần hoàn thành trước một hạn chót (nộp bài, làm báo cáo, đóng tiền) là công việc: dùng create_task.
+- Phân biệt LỊCH TRÌNH và CÔNG VIỆC (mặc định là CÔNG VIỆC):
+  * Chỉ dùng create_event khi hoạt động LẶP LẠI ("hằng ngày", "mỗi sáng", "thứ 2 hàng tuần", "mỗi tháng")
+    hoặc người dùng nói rõ là "lịch", "lịch trình", "sự kiện", "đặt lịch". Khi đó truyền recurrence
+    (daily/weekly/monthly/yearly), start = lần diễn ra đầu tiên, duration_minutes = thời lượng.
+  * Mọi việc khác dùng create_task, kể cả việc có giờ cụ thể nhưng không lặp ("họp lúc 3 giờ chiều mai",
+    "đi khám răng 9 giờ sáng thứ 5", "từ 2 giờ đến 5 giờ ôn bài"): áp dụng các quy tắc planned_start/deadline ở trên.
   * Muốn biến một công việc có sẵn thành lịch lặp: tìm bằng list_tasks, tạo lịch bằng create_event với
     cùng giờ, rồi delete_task công việc cũ (hệ thống sẽ hỏi người dùng xác nhận).
   * Hỏi lịch của một ngày: dùng cả list_events(day=...) và list_tasks. Ứng dụng HỖ TRỢ lịch lặp lại;
@@ -54,7 +55,8 @@ Quy tắc:
 - Việc bị trễ hoặc lỡ lịch, "xếp lại lịch", "dời kế hoạch dự án X", có việc phát sinh chen vào: dùng
   reschedule_tasks (project_name nếu nói tới một dự án, finish_by nếu có hạn mới). Có việc phát sinh thì tạo
   việc đó trước (create_task có planned_start) rồi mới reschedule_tasks.
-- "Lịch có trùng không", "việc nào sắp trễ", "có gì cần chú ý": dùng check_schedule. Nếu kết quả của công cụ
+- Hỏi việc ĐÃ quá hạn hoặc việc đến hạn khi nào: dùng list_tasks. Chỉ dùng check_schedule khi hỏi về lịch
+  trùng giờ, việc CÓ NGUY CƠ/sắp trễ hạn, hoặc "có gì cần chú ý". Nếu kết quả của công cụ
   tạo/sửa có cảnh báo "Trùng giờ", phải báo cho người dùng và gợi ý đổi giờ.
 - Báo cáo, tổng kết, standup ngày/tuần: dùng progress_report (period=day hoặc week) rồi tóm tắt: đã làm được
   gì, còn tồn đọng gì, rủi ro nào.
